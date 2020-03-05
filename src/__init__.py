@@ -11,7 +11,7 @@ from etc.conf import (DATA_DIRNAME,
 
 import urls
 
-
+URLs = urls
 
 _vars = {
     "prefix" : FILEPREFIX,

@@ -32,13 +32,14 @@ class Session:
             self.credentials = args[1]
             self.response = args[2]
             self.cookies = self.response.cookies
-        self.timestamp = datetime.isoformat()
         self.logfile = logfile
-        self.session_id = None
 
     def log(self,data):
         stamp = datetime.isoformat(datetime.now())
         files = sorted(list(self.logs.iterdir()))
+        print(self.logs)
+        print(os.listdir(self.logs))
+        print(files)
         if files:
             logdata,logpath = self.log_vars({stamp:data},files[-1])
         else:
