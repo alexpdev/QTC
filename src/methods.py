@@ -2,9 +2,8 @@ import os
 import sys
 import json
 import requests
-from src.urls import items
-from src.objects import RequestError
-
+from datetime import datetime
+from src.objects import RequestError,Session
 
 def login(*args,**kwargs):
     try:
@@ -15,26 +14,29 @@ def login(*args,**kwargs):
 
 def _login_with_kwargs(**kwargs):
     url = kwargs["url"] + "auth/login"
-    params = kwargs["credentials"]
-    response = requests.get(url,params=params)
-    if response.status_code == 200:
-        return response
-    raise RequestError
+    response = requests.get(url,params=kwargs["credentials"])
+    if response.status_code != 200:
+        raise RequestError
+    kwargs["response"] = response
+    kwargs["cookies"] = response.cookies
+    session = Session(**kwargs)
+    return session
 
-
-def _login_with_args(url,username,password):
-    params = {"username":username,"password":password}
-    response = requests.get(url+"auth/login",params=params)
-    if response.status_code == 200:
-        return response
-    raise RequestError
+def _login_with_args(*args):
+    url,username,password = args
+    credentials = {"username":username,"password":password}
+    response = requests.get(url+"auth/login",params=credentials)
+    if response.status_code != 200:
+        raise RequestError
+    args = (url,credentials,response)
+    session = Session(*args)
+    return session
 
 def check_response(response):
     if response.status_code == 200:
         return True
     else:
         raise RequestError
-
 
 def get_info(base,response):
     url = base + "torrents/info"
