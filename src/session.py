@@ -2,7 +2,7 @@ import os
 import sys
 import json
 from src.mixins import SessionMixin
-from etc.conf import FILESUFFIX,FILEPREFIX,DATA_DIRNAME
+from conf import FILESUFFIX,FILEPREFIX,DATA_DIRNAME
 from pathlib import Path
 from datetime import datetime
 
@@ -31,11 +31,7 @@ class Session(SessionMixin):
 
     def log(self,data):
         stamp = datetime.isoformat(datetime.now())
-        files = os.listdir(self.logs)
-        files = [i for i in files if self.name in i]
-        print(self.logs)
-        print(os.listdir(self.logs))
-        print(files)
+        files = [i for i in self.logs.iterdir() if self.name in i.name]
         if files:
             logdata,logpath = self.log_vars({stamp:data},files[-1])
         else:

@@ -1,9 +1,6 @@
 # Default and Custom Configuration Data Go Here
-
-DATA_DIRNAME = "data"
-
+from pathlib import Path
+ROOT = Path(__file__).parent.resolve()
+DATA_DIRNAME = ROOT / "data"
 FILEPREFIX = "torrent."
-
 FILESUFFIX = ".log.json"
-
-URLS = "src/urls"
