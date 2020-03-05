@@ -1,67 +1,62 @@
 import os
 import sys
 import json
-from src.mixins import SessionMixin
-from conf import FILESUFFIX,FILEPREFIX,DATA_DIRNAME
 from pathlib import Path
 from datetime import datetime
+from src.mixins import RequestMixin,LoggerMixin
+from src.models import DataModel
+from src.utils import LogPath,gen_logfile
 
 
-def logfile(name,txt):
-    PREFIX = name + "." + FILEPREFIX
-    SUFFIX = FILESUFFIX
-    LOGS = DATA_DIRNAME
-    name = ".".join([PREFIX,txt,SUFFIX])
-    path = os.path.join(LOGS,name)
-    return path
+class Session(RequestMixin,LoggerMixin):
+    logs = LogPath
 
-class Session(SessionMixin):
-    logs = DATA_DIRNAME
-
-    def __init__(self,name=None,**kwargs):
+    def __init__(self,name=None,url=None,credentials=None):
         self.name = name
-        self.url = kwargs["url"]
-        self.credentials = kwargs["credentials"]
-        self.response = None
-        self.cookies = None
-        self.logfile = self._logfile
+        self.url = url
+        self.credentials = credentials
+        self.models = []
 
-    def _logfile(self,text):
-        return logfile(self.name,text)
+    def parse_logs(self):
+        for log in self.logs.iterdir():
+            if self.name in log.name:
+                yield log
 
-    def log(self,data):
-        stamp = datetime.isoformat(datetime.now())
-        files = [i for i in self.logs.iterdir() if self.name in i.name]
-        files = sorted(files,key=lambda x: x.name)
-        if files:
-            logdata,logpath = self.log_vars({stamp:data},files[-1])
-        else:
-            logdata = {stamp:data}
-            logpath = self.logfile("1")
-        json.dump(logdata,open(logpath,"wt"))
+    def load_models(self):
+        if not self.models:
+            for log in self.parse_logs():
+                self.load_data(log)
+        return self.models
+
+    def load_data(self,path):
+        data = json.load(open(path,"rt"))
+        for stamp in data:
+            lst = data[stamp]
+            logtime = datetime.fromisoformat(stamp)
         return
 
-    def log_vars(self,data,path):
-        if self.is_full(path):
-            logdata = json.load(open(path,"rt"))
-            if logdata: logdata.update(data)
-            logpath = path
-        else:
-            logdata = data
-            logpath = self.next_log_path(path)
-        return logdata,logpath
+    def add_models(self,lst,logtime):
+        for kwargs in lst:
+            model = DataModel(self.name,logtime,**kwargs)
+            self.models.append(model)
+        return
 
-    def is_full(self,path):
-        size = path.stat().st_size
-        if size < 1000000:
-            return True
-        return False
+class SessionManager:
+    def __init__(self,**kwargs):
+        self.name = "manager"
+        self.sessions = []
 
-    def next_log_path(self,path):
-        parts = path.name.split(".")
-        num = int(parts[-3])
-        if num < 9:
-            name = ".".join(parts[2:-3] + [str(num+1)])
-        else:
-            name = ".".join(parts[2:-2] + ["1"])
-        return self.logfile(name)
+    def set_window(self,win):
+        self.window = win
+        return
+
+    def names(self):
+        return [i.name for i in self.sessions]
+
+    def urls(self):
+        return [i.url for i in self.sessions]
+
+    def add_session(self,session):
+        lst = list(self.sessions)
+        lst += [session]
+        self.sessions = tuple(lst)
