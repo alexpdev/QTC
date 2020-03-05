@@ -27,12 +27,6 @@ def main(k,v):
     session.log(b)
     print(b)
 
-
-
-
-
-
-
 if __name__ == "__main__":
     for k,v in items.items():
         main(k,v)
