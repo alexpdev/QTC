@@ -1,42 +1,38 @@
 import os
 import sys
 import json
-import src
+from src.mixins import SessionMixin
+from etc.conf import FILESUFFIX,FILEPREFIX,DATA_DIRNAME
 from pathlib import Path
 from datetime import datetime
 
-PREFIX = src._vars["prefix"]
-SUFFIX = src._vars["suffix"]
-LOGS = src._vars["data"]
 
-def logfile(txt):
+def logfile(name,txt):
+    PREFIX = name + FILEPREFIX
+    SUFFIX = FILESUFFIX
+    LOGS = DATA_DIRNAME
     name = "".join([PREFIX,txt,SUFFIX])
     path = os.path.join(LOGS,name)
     return path
 
+class Session(SessionMixin):
+    logs = DATA_DIRNAME
 
-class RequestError(Exception):
-    pass
+    def __init__(self,name=None,**kwargs):
+        self.name = name
+        self.url = kwargs["url"]
+        self.credentials = kwargs["credentials"]
+        self.response = None
+        self.cookies = None
+        self.logfile = self._logfile
 
-class Session:
-    logs = LOGS
-
-    def __init__(self,*args,**kwargs):
-        if not args:
-            self.credentials = kwargs["credentials"]
-            self.url = kwargs["base_url"]
-            self.cookies = kwargs["cookies"]
-            self.response = kwargs["response"]
-        else:
-            self.url = args[0]
-            self.credentials = args[1]
-            self.response = args[2]
-            self.cookies = self.response.cookies
-        self.logfile = logfile
+    def _logfile(self,text):
+        return logfile(self.name,text)
 
     def log(self,data):
         stamp = datetime.isoformat(datetime.now())
-        files = sorted(list(self.logs.iterdir()))
+        files = os.listdir(self.logs)
+        files = [i for i in files if self.name in i]
         print(self.logs)
         print(os.listdir(self.logs))
         print(files)

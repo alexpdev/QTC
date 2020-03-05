@@ -7,6 +7,7 @@ load_dotenv()
 user = os.environ["USERNAME"]
 pw = os.environ["PASSWORD"]
 pwSeedbox = os.environ["SEEDBOXPASS"]
+seedboxurl = os.environ["SEEDBOXURL"]
 items = {
     "asp001":{
         "url": "http://asp001:8765/api/v2/",
@@ -23,7 +24,7 @@ items = {
         }
     },
     "seedbox" : {
-        "url" : "http://51.254.241.117:8080/api/v2/",
+        "url" : seedboxurl,
         "credentials":{
             "username":user,
             "password":pwSeedbox,
