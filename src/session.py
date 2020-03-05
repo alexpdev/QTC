@@ -8,10 +8,10 @@ from datetime import datetime
 
 
 def logfile(name,txt):
-    PREFIX = name + FILEPREFIX
+    PREFIX = name + "." + FILEPREFIX
     SUFFIX = FILESUFFIX
     LOGS = DATA_DIRNAME
-    name = "".join([PREFIX,txt,SUFFIX])
+    name = ".".join([PREFIX,txt,SUFFIX])
     path = os.path.join(LOGS,name)
     return path
 
@@ -32,6 +32,7 @@ class Session(SessionMixin):
     def log(self,data):
         stamp = datetime.isoformat(datetime.now())
         files = [i for i in self.logs.iterdir() if self.name in i.name]
+        files = sorted(files,key=lambda x: x.name)
         if files:
             logdata,logpath = self.log_vars({stamp:data},files[-1])
         else:
@@ -42,11 +43,12 @@ class Session(SessionMixin):
 
     def log_vars(self,data,path):
         if self.is_full(path):
-            logdata = json.load(open(path,"rt")).update(data)
+            logdata = json.load(open(path,"rt"))
+            if logdata: logdata.update(data)
             logpath = path
         else:
             logdata = data
-            logpath = next_log_path(path)
+            logpath = self.next_log_path(path)
         return logdata,logpath
 
     def is_full(self,path):
@@ -59,7 +61,7 @@ class Session(SessionMixin):
         parts = path.name.split(".")
         num = int(parts[-3])
         if num < 9:
-            name = ".".join(parts[1:-3] + [str(num+1)])
+            name = ".".join(parts[2:-3] + [str(num+1)])
         else:
-            name = ".".join(parts[1:-2] + ["1"])
+            name = ".".join(parts[2:-2] + ["1"])
         return self.logfile(name)
