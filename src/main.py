@@ -2,6 +2,7 @@ import os
 import sys
 from time import sleep
 from pathlib import Path
+
 from PyQt5.QtWidgets import QApplication
 
 path = Path(__file__).resolve()
@@ -26,7 +27,7 @@ if __name__ == "__main__":
         session = main(k,v)
         man.add_session(session)
     win = Win()
-    man.set_window(win)
-    win.set_tree_data(man)
     win.show()
+    win.set_man(man)
+    win.set_tree_data(man)
     sys.exit(app.exec_())

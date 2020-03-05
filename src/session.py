@@ -15,7 +15,7 @@ class Session(RequestMixin,LoggerMixin):
         self.name = name
         self.url = url
         self.credentials = credentials
-        self.models = []
+        self.models = {}
 
     def parse_logs(self):
         for log in self.logs.iterdir():
@@ -33,12 +33,17 @@ class Session(RequestMixin,LoggerMixin):
         for stamp in data:
             lst = data[stamp]
             logtime = datetime.fromisoformat(stamp)
+            self.add_models(lst,logtime)
         return
 
     def add_models(self,lst,logtime):
         for kwargs in lst:
             model = DataModel(self.name,logtime,**kwargs)
-            self.models.append(model)
+            h = model.hash
+            if h in self.models:
+                self.models[h].append(model)
+            else:
+                self.models[h] = [model]
         return
 
 class SessionManager:
@@ -50,13 +55,13 @@ class SessionManager:
         self.window = win
         return
 
-    def names(self):
-        return [i.name for i in self.sessions]
-
-    def urls(self):
-        return [i.url for i in self.sessions]
-
     def add_session(self,session):
         lst = list(self.sessions)
         lst += [session]
         self.sessions = tuple(lst)
+
+    def find_models(self,model_hash):
+        for session in self.sessions:
+            if model_hash in session.models:
+                models = session.models[model_hash]
+                return models
