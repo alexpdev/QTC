@@ -15,9 +15,9 @@ from src.window import Win
 
 def main(k,v):
     session = Session(name=k,**v)
-    a = session.login()
-    b = session.get_info()
-    session.log(b)
+    # a = session.login()
+    # b = session.get_info()
+    # session.log(b)
     return session
 
 if __name__ == "__main__":
@@ -28,6 +28,5 @@ if __name__ == "__main__":
         man.add_session(session)
     win = Win()
     win.show()
-    win.set_man(man)
-    win.set_tree_data(man)
+    win.set_session_manager(man)
     sys.exit(app.exec_())

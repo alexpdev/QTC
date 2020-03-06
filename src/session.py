@@ -49,19 +49,19 @@ class Session(RequestMixin,LoggerMixin):
 class SessionManager:
     def __init__(self,**kwargs):
         self.name = "manager"
-        self.sessions = []
+        self.sessions = {}
 
     def set_window(self,win):
         self.window = win
         return
 
     def add_session(self,session):
-        lst = list(self.sessions)
-        lst += [session]
-        self.sessions = tuple(lst)
+        if session.name not in self.sessions:
+            self.sessions[session.name] = session
+        return
 
     def find_models(self,model_hash):
-        for session in self.sessions:
+        for name,session in self.sessions.items():
             if model_hash in session.models:
                 models = session.models[model_hash]
                 return models
