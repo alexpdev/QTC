@@ -1,6 +1,5 @@
 import os
 import sys
-from time import sleep
 from pathlib import Path
 
 from PyQt5.QtWidgets import QApplication
@@ -27,6 +26,6 @@ if __name__ == "__main__":
         session = main(k,v)
         man.add_session(session)
     win = Win()
-    win.show()
     win.set_session_manager(man)
+    win.show()
     sys.exit(app.exec_())

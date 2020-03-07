@@ -1,18 +1,17 @@
 {
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintPath": "./venv/Scripts/epylint.exe",
+    "python.linting.enabled": true,
+    "testExplorer.addToEditorContextMenu": true,
+    "testExplorer.codeLens": true,
     "python.testing.unittestArgs": [
         "-v",
         "-s",
-        "./tests",
+        "./test",
         "-p",
         "test_*.py"
     ],
     "python.testing.pytestEnabled": false,
     "python.testing.nosetestsEnabled": false,
-    "python.testing.unittestEnabled": false,
-    "python.testing.promptToConfigure": false,
-    "python.linting.flake8Enabled": false,
-    "python.linting.pylintEnabled": true,
-    "python.linting.pylintPath": "./venv/Scripts/epylint.exe",
-    "python.linting.flake8Path": "./venv/Scripts/flake8.exe",
-    "python.linting.enabled": true
+    "python.testing.unittestEnabled": true,
 }

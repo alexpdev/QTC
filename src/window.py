@@ -11,24 +11,23 @@ class Win(QMainWindow):
         super().__init__(parent=parent)
 
         # Main Window Frame
-        self.resize(1100, 800)
+        self.resize(1400, 800)
         self.setWindowTitle("Torrent Companion")
         centralWidget = QWidget(self)
+        menubar = self.menuBar()
+        # self.satusBar.showMessage('Ready')
+        file_menu = QMenu("File",menubar)
+        quitaction = file_menu.addAction("Quit")
+        quitaction.triggered.connect(self.destroy_something)
+        menubar.addMenu(file_menu)
+        # menu.addMenu(file_menu)
+        help_menu = QMenu("Edit",menubar)
+        print_action = help_menu.addAction("Print")
+        print_action.triggered.connect(self.print_something)
+        menubar.addMenu(help_menu)
+        # menu.addMenu(help_menu)
         self.setCentralWidget(centralWidget)
-        self.status = QStatusBar(self)
-        self.menu = QMenuBar(self)
-        self.setMenuBar(self.menu)
-        self.setStatusBar(self.status)
-        file_menu = QMenu("&File")
-        help_menu = QMenu("&Help")
-        self.menu.addMenu(file_menu)
-        self.menu.addMenu(help_menu)
-        self.loadLogs = file_menu.addAction("Import Logs")
-        self.about = file_menu.addAction("About")
-        self.menu.setNativeMenuBar(True)
-        self.menu.setGeometry(2, 2, 50, 898)
-        self.status.setGeometry(670, 2, 698, 898)
-        font = QFont()
+        font = QFont("Leelawadee")
         font.setPointSize(10)
         font.setBold(False)
         centralWidget.setFont(font)
@@ -63,38 +62,46 @@ class Win(QMainWindow):
         self.btn1.clicked.connect(self.show_info)
         self.btn2.clicked.connect(self.show_torrent_info)
 
+    def print_something(self):
+        print("I have been clicked")
+
+    def destroy_something(self):
+        self.destroy()
+        sys.exit(app.exec_())
+
     def show_torrent_info(self):
-        current_item = self.torrents.currentItem()
-        curItemHash,curItemSes = current_item.hash_,current_item.session
-        models = self.man.sessions[curItemSes].models[curItemHash]
-        fields = models[0].static_fields()
+        selected = self.torrents.currentItem()
+        print(selected)
+        models = self.man.get_models(selected.session,selected.hash_)
+        print(len(models))
         self.checkListEmpty(self.general)
+        self.comparable_fields(models)
+        fields = models[0].static_fields()
         for k,v in fields.items():
             txt = k + "  :  " + v
             item = ListItem(txt)
             self.general.addItem(item)
-        self.comparable_fields(models)
 
     def comparable_fields(self, models):
-        vheaders,hheaders = [],[]
-        table = []
+        cols,rows = len(models),None
+        column_headers,row_headers = [],[]
+        cells = []
         for model in models:
-            row = []
-            f = model.get_comparable_fields()
-            for k,v in f.items():
-                item = QTableWidgetItem(v)
-                row.append(item)
-                if not table:
-                    vheaders.append(k)
-            table.append(row)
-            hheaders.append(str(model.logtime))
-        self.table.setRowCount(len(vheaders))
-        self.table.setColumnCount(len(hheaders))
-        self.table.setHorizontalHeaderLabels(hheaders)
-        self.table.setVerticalHeaderLabels(hheaders)
-        for x,row in enumerate(table):
+            fields = model.tableFields()
+            if not rows:
+                rows = len(fields)
+                row_headers = [i for i in fields.keys()]
+                cells = [[] for i in range(rows)]
+            for x,header in enumerate(fields):
+                item = QTableWidgetItem(fields[header])
+                cells[x].append(item)
+        self.table.setRowCount(rows)
+        self.table.setColumnCount(cols)
+        self.table.setHorizontalHeaderLabels(column_headers)
+        self.table.setVerticalHeaderLabels(row_headers)
+        for x,row in enumerate(cells):
             for y,item in enumerate(row):
-                self.table.setItem(x,y,table[x][y])
+                self.table.setItem(x,y,cells[x][y])
 
     def show_info(self):
         self.checkListEmpty(self.torrents)
