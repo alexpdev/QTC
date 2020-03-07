@@ -1,67 +1,152 @@
 import os
 import sys
 import json
-from src.mixins import SessionMixin
-from conf import FILESUFFIX,FILEPREFIX,DATA_DIRNAME
 from pathlib import Path
 from datetime import datetime
+from src.mixins import RequestMixin, JsonLogMixin, PickleLogMixin
+from src.models import DataModel
+from src.utils import LogPath,gen_logfile
 
 
-def logfile(name,txt):
-    PREFIX = name + "." + FILEPREFIX
-    SUFFIX = FILESUFFIX
-    LOGS = DATA_DIRNAME
-    name = ".".join([PREFIX,txt,SUFFIX])
-    path = os.path.join(LOGS,name)
-    return path
 
-class Session(SessionMixin):
-    logs = DATA_DIRNAME
 
-    def __init__(self,name=None,**kwargs):
+class BaseSession(RequestMixin):
+
+    def __init__(self,name=None,url=None,credentials=None):
         self.name = name
-        self.url = kwargs["url"]
-        self.credentials = kwargs["credentials"]
-        self.response = None
-        self.cookies = None
-        self.logfile = self._logfile
+        self.url = url
+        self.credentials = credentials
 
-    def _logfile(self,text):
-        return logfile(self.name,text)
 
-    def log(self,data):
-        stamp = datetime.isoformat(datetime.now())
-        files = [i for i in self.logs.iterdir() if self.name in i.name]
-        files = sorted(files,key=lambda x: x.name)
-        if files:
-            logdata,logpath = self.log_vars({stamp:data},files[-1])
-        else:
-            logdata = {stamp:data}
-            logpath = self.logfile("1")
-        json.dump(logdata,open(logpath,"wt"))
+class JsonSession(BaseMixin,JsonLogMixin):
+    """ Json file log format example:
+        ---
+        File = {
+            timestamp : {
+                [{
+                    "hash": "845743939FDSF",
+                    "name" : "some.example.torrent",
+                    "dl" : 4534564364,
+                    "ul" : 2345435,
+                    "ratio" : 0.0978
+                }]
+            }
+        }
+    """
+    logs = LogPath
+
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)
+        self.models = dict()
+
+    def load_models(self):
+        if not self.models:
+            for log in self.parse_logs():
+                self.load_data(log)
+        return self.models
+
+    def find_torrent_models(self,torrent_hash):
+        if torrent_hash in self.models:
+            return self.models[torrent_hash]
+
+    def parse_logs(self):
+        for log in self.logs.iterdir():
+            if self.name in log.name and "json" in log.name:
+                yield log
+
+    def load_data(self,path):
+        data = json.load(open(path,"rt"))
+        for stamp in data:
+            lst = data[stamp]
+            logtime = datetime.fromisoformat(stamp)
+            self.add_models(lst,logtime)
         return
 
-    def log_vars(self,data,path):
-        if self.is_full(path):
-            logdata = json.load(open(path,"rt"))
-            if logdata: logdata.update(data)
-            logpath = path
-        else:
-            logdata = data
-            logpath = self.next_log_path(path)
-        return logdata,logpath
+    def add_models(self,lst,logtime):
+        for kwargs in lst:
+            model = DataModel(self.name,logtime,**kwargs)
+            h = model.hash
+            if h in self.models:
+                self.models[h].append(model)
+            else:
+                self.models[h] = [model]
+        return
 
-    def is_full(self,path):
-        size = path.stat().st_size
-        if size < 1000000:
-            return True
-        return False
+class Session(RequestMixin,PickleLogMixin):
+    """ Pickle log structure example
+        ---
+        File = {
+            torrent_hash : {
+                "hash" : torrent_hash,
+                "name" : example.torrent.name,
+                "data" : [{
+                    "timestamp" : "2020-03-05T01:44:39.367658"
+                    "ratio" : 2.546, ...
+                    },
+                    {
+                    "ul" : 4521548,
+                    "ratio" : .012, ...
+                    }, ...
+                ]}
+            },...
+        }
+    """
+    logs = LogPath
 
-    def next_log_path(self,path):
-        parts = path.name.split(".")
-        num = int(parts[-3])
-        if num < 9:
-            name = ".".join(parts[2:-3] + [str(num+1)])
-        else:
-            name = ".".join(parts[2:-2] + ["1"])
-        return self.logfile(name)
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)
+        self._models = None
+
+    @property
+    def models(self):
+        if self._models:
+            return self._models
+        self.load_models()
+
+    @models.setter
+    def models(self,models):
+        pass
+
+    def load_models(self):
+        for log in self.logs.iterdir():
+            if self.name in log.name and "pickle" in log.name:
+                self.load_data(log)
+
+    def load_data(self,path):
+        data = pickle.load(open(path,"rb"))
+        for thash in data:
+            self.add_models(data,thash)
+        return
+
+    def add_models(self,data,thash):
+        kwargs = {}
+        for k,v in data.items():
+            if k == "data":
+                kwargs.update(v)
+                continue
+            kwargs[k] = v
+        model = DataModel(**kwargs)
+
+class SessionManager:
+    def __init__(self,**kwargs):
+        self.name = "manager"
+        self.sessions = {}
+
+    def set_window(self,win):
+        self.window = win
+        return
+
+    def add_session(self,session):
+        if session.name not in self.sessions:
+            self.sessions[session.name] = session
+        return
+
+    def search_models(self,model_hash):
+        for name,session in self.sessions.items():
+            if model_hash in session.models:
+                models = session.models[model_hash]
+                return models
+
+    def get_models(self,session_name,model_hash):
+        session = self.sessions[session_name]
+        return session.find_models(model_hash)
