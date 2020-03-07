@@ -15,7 +15,7 @@ class TableWidget(QTableWidget):
 class CentaurFont(QFont):
     def __init__(self):
         super().__init__()
-        self.info = {"name":"Centaur","size":10,"bold":False}
+        self.info = {"name":"Gill Sans MT","size":10,"bold":False}
         self.assign()
 
     def assign(self):

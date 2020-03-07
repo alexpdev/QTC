@@ -1,16 +1,56 @@
 import os
 import sys
 import json
+import pickle
 from pathlib import Path
 from datetime import datetime
 from src.mixins import RequestMixin, JsonLogMixin, PickleLogMixin
 from src.models import DataModel
-from src.utils import LogPath,gen_logfile
+from src.utils import log_filename
+from settings import DATA_DIRNAME
 
+
+
+# Pickle Backend Logging
+""" Pickle log structure example
+    ---
+    File = {
+        torrent_hash : {
+            "hash" : torrent_hash,
+            "name" : example.torrent.name,
+            "data" : [{
+                "timestamp" : "2020-03-05T01:44:39.367658"
+                "ratio" : 2.546, ...
+                },
+                {
+                "ul" : 4521548,
+                "ratio" : .012, ...
+                }, ...
+            ]}
+        },...
+    }
+"""
+
+# Json backend Logging
+""" Json file log format example:
+    ---
+    File = {
+        timestamp : {
+            [{
+                "hash": "845743939FDSF",
+                "name" : "some.example.torrent",
+                "dl" : 4534564364,
+                "ul" : 2345435,
+                "ratio" : 0.0978
+            }]
+        }
+    }
+"""
 
 
 
 class BaseSession(RequestMixin):
+    logs = DATA_DIRNAME
 
     def __init__(self,name=None,url=None,credentials=None):
         self.name = name
@@ -18,23 +58,7 @@ class BaseSession(RequestMixin):
         self.credentials = credentials
 
 
-class JsonSession(BaseMixin,JsonLogMixin):
-    """ Json file log format example:
-        ---
-        File = {
-            timestamp : {
-                [{
-                    "hash": "845743939FDSF",
-                    "name" : "some.example.torrent",
-                    "dl" : 4534564364,
-                    "ul" : 2345435,
-                    "ratio" : 0.0978
-                }]
-            }
-        }
-    """
-    logs = LogPath
-
+class JsonSession(BaseSession,JsonLogMixin):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         self.models = dict()
@@ -72,60 +96,41 @@ class JsonSession(BaseMixin,JsonLogMixin):
                 self.models[h] = [model]
         return
 
-class Session(RequestMixin,PickleLogMixin):
-    """ Pickle log structure example
-        ---
-        File = {
-            torrent_hash : {
-                "hash" : torrent_hash,
-                "name" : example.torrent.name,
-                "data" : [{
-                    "timestamp" : "2020-03-05T01:44:39.367658"
-                    "ratio" : 2.546, ...
-                    },
-                    {
-                    "ul" : 4521548,
-                    "ratio" : .012, ...
-                    }, ...
-                ]}
-            },...
-        }
-    """
-    logs = LogPath
-
+class Session(BaseSession,PickleLogMixin):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
-        self._models = None
+        self.models = dict()
 
-    @property
-    def models(self):
-        if self._models:
-            return self._models
-        self.load_models()
+    def find_models(self,model_hash):
+        return self.models[model_hash]
 
-    @models.setter
-    def models(self,models):
-        pass
+    def get_models(self):
+        if not self.models:
+            self.load_models()
+        return self.models
 
     def load_models(self):
         for log in self.logs.iterdir():
             if self.name in log.name and "pickle" in log.name:
                 self.load_data(log)
+        return
 
     def load_data(self,path):
         data = pickle.load(open(path,"rb"))
-        for thash in data:
-            self.add_models(data,thash)
+        for t_hash in data:
+            self.models[t_hash] = []
+            model = self.create_model(data[t_hash],t_hash)
         return
 
-    def add_models(self,data,thash):
-        kwargs = {}
-        for k,v in data.items():
-            if k == "data":
-                kwargs.update(v)
-                continue
-            kwargs[k] = v
-        model = DataModel(**kwargs)
+    def create_model(self,data,thash):
+        kwargs = data.copy()
+        for item in data["data"]:
+            kwargs.update(item)
+            if "client" not in kwargs:
+                kwargs["client"] = self.name
+            model = DataModel(**kwargs)
+            self.models[thash].append(model)
+
 
 class SessionManager:
     def __init__(self,**kwargs):

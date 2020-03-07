@@ -6,11 +6,15 @@ FILEPREFIX = "torrent"
 PICKLESUFFIX = "pickle.bin"
 JSONSUFFIX = "log.json"
 
-def log_filename(name,txt,ext):
-    """ Returns --> {pathlib.Path()} \n
-        name {str} - session name \n
-        \t       txt {str} - text for finle number
-        \t       ext {str} - "json" | "pickle"
+def log_filename(name,txt,ext): # -> {pathlib.Path()}
+    """ ::
+
+
+
+    Returns --> {pathlib.Path()}
+        name {str} - session name
+               txt {str} - text for finle number
+               ext {str} - "json" | "pickle"
     """
     PREFIX = name + "." + FILEPREFIX
     SUFFIX = PICKLESUFFIX if "pickle" in ext else JSONSUFFIX
@@ -23,11 +27,11 @@ def latest_log(files,ext):
     """ Returns --> {pathlib.Path}
         Parses list of files or path onjects for
         the last latest logfile.\n
-    Args:-->
-        files {Path|str} -- files in log directory
-        ext {str} -- "json" or "pickle"
+    Args:--> \t \t \n \n
+        files {Path|str} - files in log directory
+        ext {str} - "json" or "pickle"
     """
-    latest = num = None
+    latest = num = path = None
     for fp in files:
         if isinstance(fp,str):
             fp = Path(fp)

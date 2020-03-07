@@ -1,4 +1,20 @@
-#!/usr/bin/python3
+"""
+Backend for Logging with pickle
+This is the default logging backend.
+"""
+# pickle log structure example:
+#     PickleFile = {
+#         torrent hash : {
+#             "name" : example.torrent.name,
+#             "magnent_uri" : magnet?=http://example.torrent.url,
+#             "data" : {
+#                 "ul" : 4385893493,
+#                 "ratio" : 2.546,
+#                 "timestamp" : "2020-03-05T01:44:39.367658"
+#             }
+#         }
+#     }
+#! /bin/python3
 import os
 import sys
 import json
@@ -6,7 +22,7 @@ import pickle
 import requests
 from datetime import datetime
 
-from src.utils import gen_logfile,LogPath,oldest_files
+from src.utils import latest_log,log_filename
 
 
 class RequestError(Exception):
@@ -37,9 +53,18 @@ class RequestMixin:
 
 
 class BaseLogMixin:
+    ignore_fields = ["max_ratio",
+                     "seq_dl",
+                     "dl_limit",
+                     "up_limit",
+                     "auto_tmm",
+                     "force_start",
+                     "seeding_time_limit",
+                     "max_seeding_time",
+                     "f_l_peice_prio"]
 
-    def get_logfile(self,txt):
-        return gen_logfile(self.name,txt)
+    def get_logfile(self,txt,ext):
+        return log_filename(self.name,txt,ext)
 
     def is_full(self,path):
         max_data = 1000000 if "json" in path.name else 10000000
@@ -48,59 +73,40 @@ class BaseLogMixin:
             return False
         return True
 
-    def next_log_path(self,path):
+    def nextPath(self,path,ext):
         parts = path.name.split(".")
         num = int(parts[-3])
         if num < 9:
             name = ".".join(parts[2:-3] + [str(num+1)])
         else:
             name = ".".join(parts[2:-2] + ["1"])
-        return self.get_logfile(name)
+        return self.log_filename(name,ext)
 
 
-class PickleLogMixin:
-    """ pickle log structure example:
-        PickleFile = {
-            torrent hash : {
-                "name" : example.torrent.name,
-                "magnent_uri" : magnet?=http://example.torrent.url,
-                "data" : {
-                    "ul" : 4385893493,
-                    "ratio" : 2.546,
-                    "timestamp" : "2020-03-05T01:44:39.367658"
-                }
-            }
-        }
-    """
+class PickleLogMixin(BaseLogMixin):
     def log(self,data):
         stamp = datetime.isoformat(datetime.now())
         files = [i for i in self.logs.iterdir() if (self.name in i.name)
                                                 and ("pickle" in i.name)]
-        if files:
-            _,pikl = oldest_files(files)
-            plogdata,plogpath = self.log_vars_pickle(stamp,data,pikl)
-        pickle.dump(plogdata,open(plogpath,"wb"))
+        fp = latest_log(files,"pickle")
+        logdata = self.filterData(stamp,data,pickle.load(open(fp,"rb")))
+        pickle.dump(logdata,open(fp,"wb"))
         return
 
-    def log_vars_pickle(self,stamp,data,path):
-        if self.is_full(path):
-            logdata, logpath = {},self.next_log_path(path)
-        else:
-            logdata, logpath = pickle.load(open(path,"rb")), path
-        for log_item in data:
-            int_data,str_data = self.log_pickled_data(stamp,log_item)
-            if log_item["hash"] in logdata:
-                logdata[log_item["hash"]]["data"].append(int_data)
-            else:
+    def filterData(self,stamp,data,logdata):
+        for item in data:
+            int_data,str_data = self.pickle_data(stamp,item)
+            if item["hash"] not in logdata:
                 str_data["data"] = [int_data]
-                logdata[log_item["hash"]] = str_data
-        return logdata,logpath
+                logdata[item["hash"]] = str_data
+            else:
+                logdata[item["hash"]]["data"].append(int_data)
+        return logdata
 
-    def log_pickled_data(self,stamp,log_item):
-        int_data,str_data = {"timestamp":stamp},{}
+    def pickle_data(self,stamp,log_item):
+        int_data,str_data = {"timestamp":stamp},{"session":self.name}
         for k,v in log_item.items():
-            if k in ["max_ratio","seq_dl","dl_limit","auto_tmm","up_limit",
-                     "force_start","seeding_time_limit","max_seeding_time","f_l_peice_prio"]:continue
+            if k in self.ignore_fields: continue
             elif isinstance(v,str):
                 str_data[k] = v
             else:
@@ -108,12 +114,12 @@ class PickleLogMixin:
         return int_data,str_data
 
 
-class JsonLogMixin:
+class JsonLogMixin(BaseLogMixin):
     def log(self,data):
         stamp = datetime.isoformat(datetime.now())
         files = [i for i in self.logs.iterdir() if
                 (self.name in i.name) and ("json" in i.name)]
-        js,_ = oldest_files(files)
+        js = latest_log(files,"json")
         logdata,logpath = self.log_vars_json(stamp,data,js)
         json.dump(logdata,open(logpath,"wt"))
         return
@@ -125,5 +131,5 @@ class JsonLogMixin:
             logpath = path
         else:
             logdata = {stamp:data}
-            logpath = self.next_log_path(path)
+            logpath = self.next_log_path(path,"json")
         return logdata,logpath

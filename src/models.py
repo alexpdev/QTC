@@ -1,7 +1,7 @@
 class DataModel:
 
     def __init__(self,**kwargs):
-        self.session = kwargs["session"]
+        self.client = kwargs["client"]
         self.timestamp = kwargs["timestamp"]
         self.added_on = kwargs["added_on"]
         self.category = kwargs["category"]
@@ -31,14 +31,17 @@ class DataModel:
         self.uploaded_session = kwargs["uploaded_session"]
         self.upspeed = kwargs["upspeed"]
 
-    def get_comparable_fields(self):
-        fields = {"downloaded_session":self.downloaded_session,
-            "dlspeed":self.dlspeed,
-            "ratio" : self.ratio,
-            "Num Leechs" : self.num_leechs,
-            "Num Seeds":self.num_seeds,
+    def tableFields(self):
+        fields = {"DL Session":self.downloaded_session,
+            "Timestamp" : self.timestamp,
+            "DL Speed":self.dlspeed,
+            "Ratio" : self.ratio,
+            "Leechs" : self.num_leechs,
+            "Seeds":self.num_seeds,
+            "Size" : self.size,
             "Uploaded" : self.uploaded,
             "Time Active" : self.time_active,
+            "Last Activity": self.last_activity,
             "Uploaded Session" : self.uploaded_session,
             "Upload Speed":self.upspeed}
         for k,v in fields.items():
@@ -47,13 +50,17 @@ class DataModel:
 
 
     def static_fields(self):
-        fields = {
+        fields = {"Client" : self.client,
+            "Hash":self.hash,
             "Torrent Name":self.name,
             "Total Size":self.total_size,
-            "Bytes Downloaded":self.downloaded,
+            "Downloaded":self.downloaded,
             "Tracker":self.tracker,
             "Date Added":self.added_on,
+            "Magnet Link":self.magnet_uri,
             "Date Completed":self.completion_on,
+            "Category" : self.category,
+            "Tags" : self.tags,
             "State":self.state}
         for k,v in fields.items():
             fields[k] = self.denom(v)
