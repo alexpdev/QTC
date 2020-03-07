@@ -1,8 +1,8 @@
 class DataModel:
 
-    def __init__(self,title,logtime,**kwargs):
-        self.session = title
-        self.logtime = logtime
+    def __init__(self,**kwargs):
+        self.session = kwargs["session"]
+        self.timestamp = kwargs["timestamp"]
         self.added_on = kwargs["added_on"]
         self.category = kwargs["category"]
         self.completed = kwargs["completed"]
@@ -30,7 +30,6 @@ class DataModel:
         self.uploaded = kwargs["uploaded"]
         self.uploaded_session = kwargs["uploaded_session"]
         self.upspeed = kwargs["upspeed"]
-        self.labels = kwargs
 
     def get_comparable_fields(self):
         fields = {"downloaded_session":self.downloaded_session,
@@ -61,9 +60,9 @@ class DataModel:
         return fields
 
     def denom(self,field):
-        if isinstance(field,str) and not field.isdigit():
+        if isinstance(field,str) or isinstance(field,float):
             return field
-        val = int(field)
+        val = field
         if val > 1_000_000_000:
             nval = str(round(val / 1_000_000_000,2))+"GB"
         elif val > 1_000_000:

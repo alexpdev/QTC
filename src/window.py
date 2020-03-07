@@ -1,40 +1,17 @@
 import sys
-import os
-# import main
-import json
-import string
-from datetime import datetime
-from PyQt5.QtWidgets import      (   QLabel,
-                                      QMenu,
-                                     QFrame,
-                                    QTabBar,
-                                    QWidget,
-                                   QMenuBar,
-                                  QDateEdit,
-                                 QStatusBar,
-                                 QTabWidget,
-                                QMainWindow,
-                                QListWidget,
-                                QVBoxLayout,
-                                QHBoxLayout,
-                                QGridLayout,
-                                QColumnView,
-                                QPushButton,
-                                QTreeWidget,
-                               QTableWidget,
-                               QApplication,
-                            QListWidgetItem,
-                           QTableWidgetItem)
+from PyQt5.QtWidgets import (QLabel, QMenu, QWidget, QMenuBar,
+                             QStatusBar, QMainWindow, QListWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QApplication, QListWidgetItem, QTableWidgetItem)
 from PyQt5.QtGui import QFont
-from src.widgets import ListItem,ComboBox
+from src.widgets import ListItem, ComboBox, CentaurFont
+
 
 class Win(QMainWindow):
 
-    def __init__(self,parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent=parent)
 
         # Main Window Frame
-        self.resize(1100,800)
+        self.resize(1100, 800)
         self.setWindowTitle("Torrent Companion")
         centralWidget = QWidget(self)
         self.setCentralWidget(centralWidget)
@@ -48,20 +25,19 @@ class Win(QMainWindow):
         self.menu.addMenu(help_menu)
         self.loadLogs = file_menu.addAction("Import Logs")
         self.about = file_menu.addAction("About")
-        menu.setNativeMenuBar(True)
-        menu.setGeometry(2,2,50,898)
-        status.setGeometry(670,2,698,898)
+        self.menu.setNativeMenuBar(True)
+        self.menu.setGeometry(2, 2, 50, 898)
+        self.status.setGeometry(670, 2, 698, 898)
         font = QFont()
         font.setPointSize(10)
         font.setBold(False)
         centralWidget.setFont(font)
-        # widg.resize(870,650)
-        self.btn1 = QPushButton("Load Info",centralWidget)
-        self.btn2 = QPushButton("Load Torrent Info",centralWidget)
+        self.btn1 = QPushButton("Load Info", centralWidget)
+        self.btn2 = QPushButton("Load Torrent Info", centralWidget)
         self.combo = ComboBox()
         self.combo.setEditable(False)
         self.torrents = QListWidget(centralWidget)
-        self.torrents.setFont(font)
+        self.torrents.setSpacing(2)
         vLay = QVBoxLayout()
         vLay.addWidget(self.btn2)
         vLay.addWidget(self.torrents)
@@ -88,9 +64,9 @@ class Win(QMainWindow):
         self.btn2.clicked.connect(self.show_torrent_info)
 
     def show_torrent_info(self):
-        item = self.torrents.currentItem()
-        session = self.man.sessions[item.session]
-        models = session.models[item.hash_]
+        current_item = self.torrents.currentItem()
+        curItemHash,curItemSes = current_item.hash_,current_item.session
+        models = self.man.sessions[curItemSes].models[curItemHash]
         fields = models[0].static_fields()
         self.checkListEmpty(self.general)
         for k,v in fields.items():
@@ -99,7 +75,7 @@ class Win(QMainWindow):
             self.general.addItem(item)
         self.comparable_fields(models)
 
-    def comparable_fields(self,models):
+    def comparable_fields(self, models):
         vheaders,hheaders = [],[]
         table = []
         for model in models:
@@ -123,24 +99,28 @@ class Win(QMainWindow):
     def show_info(self):
         self.checkListEmpty(self.torrents)
         name = self.combo.currentText()
-        models = self.man.sessions[name].load_models()
-        for _hash,model in models.items():
-            item = ListItem(model[0].name)
-            item.hash_ = _hash
+        session = self.man.sessions[name]
+        itemFont = CentaurFont()
+        for hash_ in session.models:
+            torrent_name = session.models[hash_][0].name
+            item = ListItem(torrent_name)
+            item.hash_ = hash_
             item.session = name
+            item.setFont(itemFont)
             self.torrents.addItem(item)
         return
 
-    def checkListEmpty(self,widget):
+    def checkListEmpty(self, widget):
         for idx in range(widget.count()):
             item = widget.takeItem(idx)
             del item
         return
 
-    def set_session_manager(self,manager):
+    def set_session_manager(self, manager):
         self.man = manager
         for session in self.man.sessions:
             self.combo.set_dict_header(session)
+            self.man.sessions[session].load_models()
         return
 
 

@@ -1,4 +1,29 @@
-from PyQt5.QtWidgets import QComboBox,QListWidgetItem
+from PyQt5.QtWidgets import (QComboBox, QListWidgetItem,
+                             QTableWidget, QTableWidgetItem)
+
+from PyQt5.QtGui import QFont
+
+class TableWidget(QTableWidget):
+    def __init__(self, int, int_, parent=None):
+        super().__init__(int, int_, parent=parent)
+        self.parent = parent
+
+    @classmethod
+    def create(cls,model):
+        pass
+
+class CentaurFont(QFont):
+    def __init__(self):
+        super().__init__()
+        self.info = {"name":"Centaur","size":10,"bold":False}
+        self.assign()
+
+    def assign(self):
+        self.setFamily(self.info["name"])
+        self.setPointSize(self.info["size"])
+        self.setBold(self.info["bold"])
+
+
 
 class ComboBox(QComboBox):
     def __init__(self, parent=None):
