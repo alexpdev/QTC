@@ -1,27 +1,9 @@
-"""
-Backend for Logging with pickle
-This is the default logging backend.
-"""
-# pickle log structure example:
-#     PickleFile = {
-#         torrent hash : {
-#             "name" : example.torrent.name,
-#             "magnent_uri" : magnet?=http://example.torrent.url,
-#             "data" : {
-#                 "ul" : 4385893493,
-#                 "ratio" : 2.546,
-#                 "timestamp" : "2020-03-05T01:44:39.367658"
-#             }
-#         }
-#     }
-#! /bin/python3
 import os
 import sys
 import json
 import pickle
 import requests
 from datetime import datetime
-
 from src.utils import latest_log,log_filename
 
 
@@ -112,6 +94,22 @@ class PickleLogMixin(BaseLogMixin):
             else:
                 int_data[k] = v
         return int_data,str_data
+
+
+class TorrentPickler:
+    def pickle_torrent(self,data):
+        stamp = datetime.isoformat(datetime.now())
+        fp = self.check_logs(data["hash"])
+
+    def check_logs(self,torrent_hash):
+        for fp in os.listdir(self.log):
+            if torrent_hash not in fp:
+                continue
+            if not self.is_full(fp):
+                return fp
+        return self.nextPath(torrent_hash)
+
+
 
 
 class JsonLogMixin(BaseLogMixin):

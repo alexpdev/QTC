@@ -10,7 +10,7 @@ def log_filename(name,txt,ext): # -> {pathlib.Path()}
     """ ::
 
 
-
+        \CR
     Returns --> {pathlib.Path()}
         name {str} - session name
                txt {str} - text for finle number
