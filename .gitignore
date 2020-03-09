@@ -5,13 +5,14 @@ __pycache__/
 
 temp/
 data/
-
+.vscode/
 *.pyc
 *.env
 .env
-
+settings.py
 data/*.json
-
+script.py
+books_paths.json
 
 *.pickle
 *.log

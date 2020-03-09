@@ -1,66 +1,95 @@
 import sys
-from PyQt5.QtWidgets import (QLabel, QMenu, QWidget, QMenuBar,
-                             QStatusBar, QMainWindow, QListWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget, QApplication, QListWidgetItem, QTableWidgetItem)
-from PyQt5.QtGui import QFont
-from src.widgets import ListItem, ComboBox, CentaurFont
+from PyQt5.QtWidgets import QApplication, QFrame, QGridLayout, QHBoxLayout, QLabel, QListView, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMenuBar, QOpenGLWidget, QPushButton, QStatusBar, QTabWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
+from PyQt5.QtGui import (QFont,QBrush, QColor, QConicalGradient, QCursor,
+    QFontDatabase, QIcon, QLinearGradient, QPalette, QPainter, QPixmap,
+    QRadialGradient)
+from PyQt5.QtCore import (QCoreApplication, QMetaObject, QObject, QPoint,
+    QRect, QSize, QUrl, Qt)
+from src.widgets import (ListItem, ComboBox, SansFont, FancyFont, ListWidget)
 
 
 class Win(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+        self.setup_ui()
 
-        # Main Window Frame
-        self.resize(1400, 800)
+    def load_styling_tools(self):
+        self.fancyfont = FancyFont()
+        self.sansfont = SansFont()
+        self.fg_brush = QBrush(QColor(90,223,255, 255))
+        self.bg_brush = QBrush(QColor(7,14,3, 255))
+
+    def setup_ui(self):
         self.setWindowTitle("Torrent Companion")
-        centralWidget = QWidget(self)
-        menubar = self.menuBar()
-        # self.satusBar.showMessage('Ready')
-        file_menu = QMenu("File",menubar)
-        quitaction = file_menu.addAction("Quit")
-        quitaction.triggered.connect(self.destroy_something)
-        menubar.addMenu(file_menu)
-        # menu.addMenu(file_menu)
-        help_menu = QMenu("Edit",menubar)
-        print_action = help_menu.addAction("Print")
-        print_action.triggered.connect(self.print_something)
-        menubar.addMenu(help_menu)
-        # menu.addMenu(help_menu)
-        self.setCentralWidget(centralWidget)
-        font = QFont("Leelawadee")
-        font.setPointSize(10)
-        font.setBold(False)
-        centralWidget.setFont(font)
-        self.btn1 = QPushButton("Load Info", centralWidget)
-        self.btn2 = QPushButton("Load Torrent Info", centralWidget)
-        self.combo = ComboBox()
+        self.resize(1400, 800)
+        self.load_styling_tools()
+        self.gridLayoutWidget = QWidget()
+        self.gridLayoutWidget.setObjectName(u"gridLayoutWidget")
+        self.gridLayout = QGridLayout(self.gridLayoutWidget)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setContentsMargins(5, 5, 5, 5)
+        self.static_info = ListWidget(parent=self.gridLayoutWidget)
+        self.torrentList = ListWidget(parent=self.gridLayoutWidget)
+        self.static_info.setObjectName(u"Static Torrent Info")
+        self.torrentList.setObjectName(u"TorrentList")
+        self.static_info.setFont(self.sansfont)
+        self.torrentList.setFont(self.sansfont)
+        self.torrentList.itemSelectionChanged.connect(self.show_torrent_info)
+        self.gridLayout.addWidget(self.torrentList, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.static_info, 0, 1, 3, 1)
+        self.combo = ComboBox(self.gridLayoutWidget)
+        self.combo.setObjectName(u"comboBox")
         self.combo.setEditable(False)
-        self.torrents = QListWidget(centralWidget)
-        self.torrents.setSpacing(2)
-        vLay = QVBoxLayout()
-        vLay.addWidget(self.btn2)
-        vLay.addWidget(self.torrents)
-        vLay.addWidget(self.combo)
-        vLay.addWidget(self.btn1)
-        vLay.setSpacing(6)
-        widg = QWidget()
-        self.general = QListWidget(widg)
-        self.general.setSpacing(6)
-        self.general.setFont(font)
-        self.table = QTableWidget(widg)
-        self.table.setFont(font)
-        vLay2 = QVBoxLayout()
-        vLay2.setSpacing(4)
-        vLay2.addWidget(self.general)
-        vLay2.addWidget(self.table)
-        widg.setLayout(vLay2)
-        hLay = QHBoxLayout()
-        hLay.addLayout(vLay)
-        hLay.addWidget(widg)
-        hLay.setSpacing(5)
-        centralWidget.setLayout(hLay)
+        self.gridLayout.addWidget(self.combo, 1, 0, 1, 1)
+        self.btn1 = QPushButton("Load Info", self.gridLayoutWidget)
+        self.btn1.setObjectName(u"Load")
         self.btn1.clicked.connect(self.show_info)
-        self.btn2.clicked.connect(self.show_torrent_info)
+        self.gridLayout.addWidget(self.btn1, 2, 0, 1, 1)
+        self.tabWidget = QTabWidget()
+        self.tabWidget.setObjectName(u"tabWidget")
+        self.tab = QWidget()
+        self.tab.setObjectName(u"tab")
+        self.verticalLayout = QVBoxLayout()
+        self.verticalLayout.setSpacing(2)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(2, 2, 2, 2)
+        self.gridLayout.addLayout(self.verticalLayout,4,0,-1,-1)
+        # self.tab.setLayout(self.verticalLayout)
+        self.table_data = QTableWidget(self.tab)
+        self.table_data.setObjectName(u"tableWidget")
+        self.table_data.setFrameShape(QFrame.WinPanel)
+        self.table_data.setFrameShadow(QFrame.Sunken)
+        self.table_data.setLineWidth(12)
+        self.table_data.setMidLineWidth(12)
+        self.verticalLayout.addWidget(self.table_data)
+        self.tabWidget.addTab(self.tab, "DataTable")
+        self.tab_2 = QWidget()
+        self.tab_2.setObjectName(u"tab_2")
+        self.tabWidget.addTab(self.tab_2, "Graphs")
+        # self.gridLayout.addWidget(self.tabWidget, 4, 0, 1, 2)
+        self.gridLayout.setRowStretch(0, 2)
+        self.gridLayout.setRowStretch(1, 3)
+        self.gridLayout.setRowStretch(4, 4)
+        self.gridLayout.setColumnStretch(0, 2)
+        self.gridLayout.setColumnStretch(1, 4)
+        self.setCentralWidget(self.gridLayoutWidget)
+        menubar = self.menuBar()
+        menubar.setObjectName(u"menubar")
+        statusbar = self.statusBar()
+        statusbar.setObjectName(u"statusbar")
+        self.file_menu = QMenu("File",parent=menubar)
+        self.help_menu = QMenu("Help",parent=menubar)
+        self.file_menu.addAction("Print",self.print_something)
+        self.help_menu.addAction("Quit",self.destroy_something)
+        menubar.addMenu(self.file_menu)
+        menubar.addMenu(self.help_menu)
+        # self.setStatusBar(self.statusbar)
+        self.tabWidget.setCurrentIndex(0)
+        QMetaObject.connectSlotsByName(self)
+        sorting = self.table_data.isSortingEnabled()
+        self.static_info.setSortingEnabled(True)
+        self.table_data.setSortingEnabled(sorting)
 
     def print_something(self):
         print("I have been clicked")
@@ -70,57 +99,57 @@ class Win(QMainWindow):
         sys.exit(app.exec_())
 
     def show_torrent_info(self):
-        selected = self.torrents.currentItem()
-        print(selected)
+        self.static_info.isEmpty()
+        selected = self.torrentList.currentItem()
         models = self.man.get_models(selected.session,selected.hash_)
-        print(len(models))
-        self.checkListEmpty(self.general)
         self.comparable_fields(models)
         fields = models[0].static_fields()
         for k,v in fields.items():
-            txt = k + "  :  " + v
+            txt = str(k) + "  :||:  " + str(v)
             item = ListItem(txt)
-            self.general.addItem(item)
+            item.setForeground(self.fg_brush)
+            item.setBackground(self.bg_brush)
+            item.setFont(self.sansfont)
+            self.static_info.appendItem(item)
 
     def comparable_fields(self, models):
-        cols,rows = len(models),None
-        column_headers,row_headers = [],[]
-        cells = []
-        for model in models:
+        v_headers,rows,cols = [],len(models),None
+        for i,model in enumerate(models):
             fields = model.tableFields()
-            if not rows:
-                rows = len(fields)
-                row_headers = [i for i in fields.keys()]
-                cells = [[] for i in range(rows)]
+            v_headers.append(str(fields["Timestamp"]))
+            del fields["Timestamp"]
+            if not cols:
+                cols = len(fields)
+                h_headers = [str(j) for j in fields.keys() if j != "Timestamp"]
+                cells = [[] for j in range(len(models))]
             for x,header in enumerate(fields):
-                item = QTableWidgetItem(fields[header])
-                cells[x].append(item)
-        self.table.setRowCount(rows)
-        self.table.setColumnCount(cols)
-        self.table.setHorizontalHeaderLabels(column_headers)
-        self.table.setVerticalHeaderLabels(row_headers)
+                item = QTableWidgetItem(str(fields[header]))
+                item.setForeground(self.fg_brush)
+                item.setBackground(self.bg_brush)
+                item.setFont(self.sansfont)
+                item.setFlags(Qt.ItemIsSelectable|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled)
+                cells[i].append(item)
+        self.table_data.setRowCount(rows)
+        self.table_data.setColumnCount(cols)
+        self.table_data.setHorizontalHeaderLabels(h_headers)
+        self.table_data.setVerticalHeaderLabels(v_headers)
         for x,row in enumerate(cells):
             for y,item in enumerate(row):
-                self.table.setItem(x,y,cells[x][y])
+                self.table_data.setItem(x,y,cells[x][y])
 
     def show_info(self):
-        self.checkListEmpty(self.torrents)
+        self.torrentList.isEmpty()
         name = self.combo.currentText()
         session = self.man.sessions[name]
-        itemFont = CentaurFont()
         for hash_ in session.models:
             torrent_name = session.models[hash_][0].name
             item = ListItem(torrent_name)
             item.hash_ = hash_
             item.session = name
-            item.setFont(itemFont)
-            self.torrents.addItem(item)
-        return
-
-    def checkListEmpty(self, widget):
-        for idx in range(widget.count()):
-            item = widget.takeItem(idx)
-            del item
+            item.setForeground(self.fg_brush)
+            item.setBackground(self.bg_brush)
+            item.setFont(self.fancyfont)
+            self.torrentList.appendItem(item)
         return
 
     def set_session_manager(self, manager):
