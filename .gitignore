@@ -11,7 +11,8 @@ data/
 .env
 
 data/*.json
-
+script.py
+books_paths.json
 
 *.pickle
 *.log

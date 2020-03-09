@@ -1,22 +1,25 @@
+from datetime import datetime,timedelta
+
 class DataModel:
 
     def __init__(self,**kwargs):
         self.client = kwargs["client"]
-        self.timestamp = kwargs["timestamp"]
-        self.added_on = kwargs["added_on"]
+        self.timestamp = datetime.fromisoformat(kwargs["timestamp"])
         self.category = kwargs["category"]
-        self.completed = kwargs["completed"]
-        self.completion_on = kwargs["completion_on"]
+        self.added_on = datetime.fromtimestamp(kwargs["added_on"])
         self.dlspeed = kwargs["dlspeed"]
         self.downloaded = kwargs["downloaded"]
         self.downloaded_session = kwargs["downloaded_session"]
+        self.last_activity = datetime.fromtimestamp(kwargs["last_activity"])
         self.hash = kwargs["hash"]
-        self.last_activity = kwargs["last_activity"]
+        self.completed = kwargs["completed"]
+        self.completion_on = datetime.fromtimestamp(kwargs["completion_on"])
         self.magnet_uri = kwargs["magnet_uri"]
         self.name = kwargs["name"]
         self.num_complete = kwargs["num_complete"]
         self.num_incomplete = kwargs["num_incomplete"]
         self.num_leechs = kwargs["num_leechs"]
+        self.time_active = timedelta(seconds = kwargs["time_active"])
         self.num_seeds = kwargs["num_seeds"]
         self.ratio = kwargs["ratio"]
         self.progress = kwargs["progress"]
@@ -24,7 +27,6 @@ class DataModel:
         self.size = kwargs["size"]
         self.state = kwargs["state"]
         self.tags = kwargs["tags"]
-        self.time_active = kwargs["time_active"]
         self.total_size = kwargs["total_size"]
         self.tracker = kwargs["tracker"]
         self.uploaded = kwargs["uploaded"]
@@ -66,8 +68,15 @@ class DataModel:
             fields[k] = self.denom(v)
         return fields
 
+    def time_fields(self):
+        fields = {self.added_on :"Added On",
+        self.timestamp :"Time Stamp",
+        self.time_active :"Time Active",
+        self.completion_on :"Completion On",
+        self.last_activity :"Last Activity"}
+
     def denom(self,field):
-        if isinstance(field,str) or isinstance(field,float):
+        if not isinstance(field,int):
             return field
         val = field
         if val > 1_000_000_000:
