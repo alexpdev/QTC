@@ -33,6 +33,7 @@ class DataModel:
         self.uploaded_session = kwargs["uploaded_session"]
         self.upspeed = kwargs["upspeed"]
 
+
     def tableFields(self):
         fields = {"DL Session":self.downloaded_session,
             "Timestamp" : self.timestamp,
@@ -88,3 +89,5 @@ class DataModel:
         else:
             nval = str(val)+" B"
         return nval
+
+

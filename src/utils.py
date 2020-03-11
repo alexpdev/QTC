@@ -6,12 +6,8 @@ FILEPREFIX = "torrent"
 PICKLESUFFIX = "pickle.bin"
 JSONSUFFIX = "log.json"
 
-def log_filename(name,txt,ext): # -> {pathlib.Path()}
-    """ ::
-
-
-        \CR
-    Returns --> {pathlib.Path()}
+def log_filename(name,txt,ext):
+    """ Returns --> {pathlib.Path()}
         name {str} - session name
                txt {str} - text for finle number
                ext {str} - "json" | "pickle"

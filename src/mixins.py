@@ -3,24 +3,33 @@ import sys
 import json
 import pickle
 import requests
+import sqlite3 as sql
 from datetime import datetime
-from src.utils import latest_log,log_filename
+from .utils import latest_log, log_filename
 
 
 class RequestError(Exception):
     pass
 
 
+class DbAlreadyConnected(Exception):
+    pass
+
+
+class NoDatabaseConnected(Exception):
+    pass
+
+
 class RequestMixin:
-    def login(self,credentials=None,url=None):
+    def login(self, credentials=None, url=None):
         url = self.url + "auth/login"
-        response = requests.get(url,params=self.credentials)
+        response = requests.get(url, params=self.credentials)
         self.check_response(response)
         self.response = response
         self.cookies = response.cookies
         return response
 
-    def check_response(self,response):
+    def check_response(self, response):
         if response.status_code == 200:
             return True
         else:
@@ -28,106 +37,66 @@ class RequestMixin:
 
     def get_info(self):
         url = self.url + "torrents/info"
-        response = requests.get(url,cookies=self.cookies)
+        response = requests.get(url, cookies=self.cookies)
         self.check_response(response)
         data = response.json()
         return data
 
 
-class BaseLogMixin:
-    ignore_fields = ["max_ratio",
-                     "seq_dl",
-                     "dl_limit",
-                     "up_limit",
-                     "auto_tmm",
-                     "force_start",
-                     "seeding_time_limit",
-                     "max_seeding_time",
-                     "f_l_peice_prio"]
+class QueryMixin:
 
-    def get_logfile(self,txt,ext):
-        return log_filename(self.name,txt,ext)
+    @property
+    def con(self):
+        return self._connection
 
-    def is_full(self,path):
-        max_data = 1000000 if "json" in path.name else 10000000
-        size = path.stat().st_size
-        if size < max_data:
-            return False
-        return True
+    @property
+    def cur(self):
+        return self._cursor
 
-    def nextPath(self,path,ext):
-        parts = path.name.split(".")
-        num = int(parts[-3])
-        if num < 9:
-            name = ".".join(parts[2:-3] + [str(num+1)])
-        else:
-            name = ".".join(parts[2:-2] + ["1"])
-        return self.log_filename(name,ext)
+    def connect(self,path):
+        if self.con:
+            raise DbAlreadyConnected
+        self._connection = sql.connect(path)
+        self._cursor = self._connection.cursor()
+        return self.cur
 
-
-class PickleLogMixin(BaseLogMixin):
-    def log(self,data):
-        stamp = datetime.isoformat(datetime.now())
-        files = [i for i in self.logs.iterdir() if (self.name in i.name)
-                                                and ("pickle" in i.name)]
-        fp = latest_log(files,"pickle")
-        logdata = self.filterData(stamp,data,pickle.load(open(fp,"rb")))
-        pickle.dump(logdata,open(fp,"wb"))
+    def create_table(self,table_name,foreign_key=None,**kwargs):
+        statmnt = "CREATE TABLE " + table_name + "("
+        columns = [" ".join([str(i),str(j)]) for i,j in kwargs.items()]
+        params = ", ".join(columns)
+        if foreign_key:
+            params += ", FOREIGN KEY(hash) REFERENCES static(hash)"
+        statmnt = "".join([statmnt,params,")"])
+        self.cur.execute(statmnt)
+        self.con.commit()
         return
 
-    def filterData(self,stamp,data,logdata):
-        for item in data:
-            int_data,str_data = self.pickle_data(stamp,item)
-            if item["hash"] not in logdata:
-                str_data["data"] = [int_data]
-                logdata[item["hash"]] = str_data
-            else:
-                logdata[item["hash"]]["data"].append(int_data)
-        return logdata
-
-    def pickle_data(self,stamp,log_item):
-        int_data,str_data = {"timestamp":stamp},{"session":self.name}
-        for k,v in log_item.items():
-            if k in self.ignore_fields: continue
-            elif isinstance(v,str):
-                str_data[k] = v
-            else:
-                int_data[k] = v
-        return int_data,str_data
-
-
-class TorrentPickler:
-    def pickle_torrent(self,data):
-        stamp = datetime.isoformat(datetime.now())
-        fp = self.check_logs(data["hash"])
-
-    def check_logs(self,torrent_hash):
-        for fp in os.listdir(self.log):
-            if torrent_hash not in fp:
-                continue
-            if not self.is_full(fp):
-                return fp
-        return self.nextPath(torrent_hash)
-
-
-
-
-class JsonLogMixin(BaseLogMixin):
-    def log(self,data):
-        stamp = datetime.isoformat(datetime.now())
-        files = [i for i in self.logs.iterdir() if
-                (self.name in i.name) and ("json" in i.name)]
-        js = latest_log(files,"json")
-        logdata,logpath = self.log_vars_json(stamp,data,js)
-        json.dump(logdata,open(logpath,"wt"))
+    def insert_row(self,table_name,**kwargs):
+        stmnt = f"INSERT INTO {table_name} "
+        columns,values = [],[]
+        for k,v in kwargs.items():
+            columns.append(k)
+            values.append(v)
+        columns = "(" + ",".join(columns) + ")"
+        params = "(" + ",".join(["?" for i in range(len(values))]) + ")"
+        statement = "".join([stmnt,columns," VALUES ", params])
+        self.cur.execute(statement,tuple(values))
+        self.con.commit()
         return
 
-    def log_vars_json(self,stamp,data,path):
-        if not self.is_full(path):
-            logdata = json.load(open(path,"rt"))
-            if logdata: logdata.update({stamp:data})
-            logpath = path
+    def select_rows(self,table,*args):
+        if args:
+            statement = f"SELECT {args} FROM {table}"
         else:
-            logdata = {stamp:data}
-            logpath = self.next_log_path(path,"json")
-        return logdata,logpath
+            statement = f"SELECT * FROM {table}"
+        self.cur.execute(statement)
+        lst = []
+        for row in self.cur:
+            print(row)
+            lst.append(row)
+        return row
+
+    def select_where(self,table,field,value):
+        stmnt = f"SELECT * FROM {table} WHERE ({field} = ?)"
+        self.cur.execute(stmnt,(value,))
+

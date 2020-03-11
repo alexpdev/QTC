@@ -4,49 +4,11 @@ import json
 import pickle
 from pathlib import Path
 from datetime import datetime
-from src.mixins import RequestMixin, JsonLogMixin, PickleLogMixin
-from src.models import DataModel
-from src.utils import log_filename
+from .mixins import RequestMixin,JsonBackend,PickleBackend
+from .models import DataModel
+from .utils import log_filename
+from .backends import SqlBackend
 from settings import DATA_DIRNAME
-
-
-
-# Pickle Backend Logging
-""" Pickle log structure example
-    ---
-    File = {
-        torrent_hash : {
-            "hash" : torrent_hash,
-            "name" : example.torrent.name,
-            "data" : [{
-                "timestamp" : "2020-03-05T01:44:39.367658"
-                "ratio" : 2.546, ...
-                },
-                {
-                "ul" : 4521548,
-                "ratio" : .012, ...
-                }, ...
-            ]}
-        },...
-    }
-"""
-
-# Json backend Logging
-""" Json file log format example:
-    ---
-    File = {
-        timestamp : {
-            [{
-                "hash": "845743939FDSF",
-                "name" : "some.example.torrent",
-                "dl" : 4534564364,
-                "ul" : 2345435,
-                "ratio" : 0.0978
-            }]
-        }
-    }
-"""
-
 
 
 class BaseSession(RequestMixin):
@@ -58,7 +20,26 @@ class BaseSession(RequestMixin):
         self.credentials = credentials
 
 
-class JsonSession(BaseSession,JsonLogMixin):
+class SqlSession(BaseSession,SqlBackend):
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)
+        self._cursor = None
+        self._connection = None
+        self._models = {}
+        self.get_db()
+
+    @property
+    def models(self):
+        return self._models
+
+    def get_session_torrents(self):
+        self.select_where("static","client",self.name)
+        for row in self.cur:
+            print(row)
+
+
+
+class JsonSession(BaseSession,JsonBackend):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         self.models = dict()
@@ -96,7 +77,7 @@ class JsonSession(BaseSession,JsonLogMixin):
                 self.models[h] = [model]
         return
 
-class Session(BaseSession,PickleLogMixin):
+class PickleSession(BaseSession,PickleBackend):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         self.models = dict()
@@ -144,6 +125,7 @@ class SessionManager:
     def add_session(self,session):
         if session.name not in self.sessions:
             self.sessions[session.name] = session
+            session.get_session_torrents()
         return
 
     def search_models(self,model_hash):
