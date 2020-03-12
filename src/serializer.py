@@ -1,6 +1,6 @@
 from datetime import datetime,timedelta
 
-class ItemSerializer:
+class Serializer:
     def __init__(self):
         self.info = {
             "client":{
@@ -70,7 +70,7 @@ class ItemSerializer:
                 },
             "num_complete": {
                 "type":"integer",
-                "label":"Num Complete",
+                "label":"Total Complete",
                 "converter": self.convert_int
                 },
             "uploaded": {
@@ -85,12 +85,12 @@ class ItemSerializer:
                 },
             "num_incomplete": {
                 "type":"integer",
-                "label":"Num Incomplete",
+                "label":"Total Incomplete",
                 "converter": self.convert_int
                 },
             "num_leechs": {
                 "type":"integer",
-                "label":"Leechs Count",
+                "label":"Total Leechs",
                 "converter": self.convert_int
                 },
             "timestamp": {
@@ -100,7 +100,7 @@ class ItemSerializer:
                 },
             "num_seeds": {
                 "type":"integer",
-                "label":"Seeds Count",
+                "label":"Total Seeds",
                 "converter": self.convert_int
                 },
             "size": {
@@ -110,12 +110,12 @@ class ItemSerializer:
                 },
             "upspeed": {
                 "type":"integer",
-                "label":"Up Speed",
+                "label":"Upload Speed",
                 "converter": self.convert_bps
                 },
             "dlspeed": {
                 "type":"integer",
-                "label":"Down Speed",
+                "label":"Download Speed",
                 "converter": self.convert_bps
                 },
             "last_activity":{
@@ -149,6 +149,16 @@ class ItemSerializer:
                 "converter": self.convert_ratio
                 }
             }
+
+    def serialize_value(self,var,txt):
+        val = self.info[txt]["converter"](var)
+        return val
+
+    def serialize_output(self,var,txt):
+        info = self.info[txt]
+        label = info["label"]
+        val = self.info[txt]["converter"](var)
+        return label,val
 
     def get_types(self,*args):
         types = {}

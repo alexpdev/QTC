@@ -101,7 +101,7 @@ class Win(QMainWindow):
     def show_torrent_info(self):
         self.static_info.isEmpty()
         selected = self.torrentList.currentItem()
-        models = self.man.get_models(selected.session,selected.hash_)
+        models = self.manager.get_models(selected.session,selected.torrent_hash)
         self.comparable_fields(models)
         fields = models[0].static_fields()
         for k,v in fields.items():
@@ -140,11 +140,11 @@ class Win(QMainWindow):
     def show_info(self):
         self.torrentList.isEmpty()
         name = self.combo.currentText()
-        session = self.man.sessions[name]
-        for hash_ in session.models:
-            torrent_name = session.models[hash_][0].name
-            item = ListItem(torrent_name)
-            item.hash_ = hash_
+        session = self.manager.sessions[name]
+        for torrent_hash in session.models:
+            model = session.models[torrent_hash]
+            item = ListItem(model.name)
+            item.torrent_hash = torrent_hash
             item.session = name
             item.setForeground(self.fg_brush)
             item.setBackground(self.bg_brush)
@@ -153,10 +153,9 @@ class Win(QMainWindow):
         return
 
     def set_session_manager(self, manager):
-        self.man = manager
-        for session in self.man.sessions:
-            self.combo.set_dict_header(session)
-            self.man.sessions[session].load_models()
+        self.manager = manager
+        for session in self.manager.sessions:
+            self.combo.set_header(session)
         return
 
 

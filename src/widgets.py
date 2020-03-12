@@ -28,9 +28,11 @@ class ListWidget(QListWidget):
 
     def isEmpty(self):
         self.clear()
-        for idx in range(self.row_count):
+        indeces = list(range(self.row_count))
+        for idx in indeces[::-1]:
             item = self.takeItem(idx)
             del item
+            self.row_count -= 1
         return True
 
 
@@ -39,20 +41,24 @@ class LoadTorrentButton(QPushButton):
         super().__init__(self,txt,parent=parent)
 
     @classmethod
-    def create(cls,mainwindow=None,txt=None,parent=None):
-        ltb = cls(txt,parent=parent)
-        ltb.main = mainwindow
-        ltb.clicked.connect(show_info)
-        return ltb
+    def create(cls,window=None,listWidget=None,combo=None,txt=None):
+        btn = cls(txt,parent=None)
+        btn.label = txt
+        btn.window = window
+        btn.listWidget = listWidget
+        btn.combo = combo
+        btn.clicked.connect(show_info)
+        return btn
 
-    def checkListEmpty(self):
-        self.main.checkListEmpty(self.main.torrentList)
+    def check_if_empty(self):
+        return self.window.torrentList.isEmpty()
 
     def show_info(self):
-        self.checkListEmpty()
-        name = self.combo.currentText()
-        session = self.man.sessions[name]
-        for hash_ in session.models:
+        window = self.window
+        self.check_if_empty()
+        session_name = window.combo.currentText()
+        session = window.manager.pull_session()
+        for  in session.models:
             torrent_name = session.models[hash_][0].name
             item = ListItem(torrent_name)
             item.hash_ = hash_
@@ -93,24 +99,9 @@ class SansFont(CustomFont):
 class ComboBox(QComboBox):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.comboDict = {}
 
-    def addToDict(self,session,txt):
-        if session.name in self.comboDict:
-            self.comboDict[session.name].append(txt)
-        else:
-            self.comboDict[session.name] = [txt]
-        return
-
-    def name_in_dict(self,name):
-        if name in self.comboDict:
-            return self.comboDict[name]
-        return False
-
-    def set_dict_header(self,txt):
-        if txt not in self.comboDict:
-            self.comboDict[txt] = []
-            self.addItem(txt)
+    def set_header(self,txt):
+        self.addItem(txt)
 
 
 class ListItem(QListWidgetItem):
@@ -120,13 +111,13 @@ class ListItem(QListWidgetItem):
         self._session = None
 
     @property
-    def hash_(self):
+    def torrent_hash(self):
         if self._hash:
             return self._hash
         return
 
-    @hash_.setter
-    def hash_(self,_hash):
+    @torrent_hash.setter
+    def torrent_hash(self,torrent_hash):
         if not self._hash:
             self._hash = _hash
         return
@@ -142,3 +133,5 @@ class ListItem(QListWidgetItem):
         if not self._session:
             self._session = session
         return
+
+    def create(self)

@@ -5,7 +5,6 @@ import pickle
 import requests
 import sqlite3 as sql
 from datetime import datetime
-from .utils import latest_log, log_filename
 
 
 class RequestError(Exception):

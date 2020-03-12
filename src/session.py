@@ -4,17 +4,17 @@ import json
 import pickle
 from pathlib import Path
 from datetime import datetime
-from .mixins import RequestMixin,JsonBackend,PickleBackend
-from .models import DataModel
-from .utils import log_filename
-from .backends import SqlBackend
+from src.mixins import RequestMixin
+from src.models import StaticModel,DataModel
+from src.serializer import Serializer
+from src.backends import SqlBackend,JsonBackend,PickleBackend
 from settings import DATA_DIRNAME
 
 
 class BaseSession(RequestMixin):
-    logs = DATA_DIRNAME
 
     def __init__(self,name=None,url=None,credentials=None):
+        self.serializer = Serializer()
         self.name = name
         self.url = url
         self.credentials = credentials
@@ -32,10 +32,23 @@ class SqlSession(BaseSession,SqlBackend):
     def models(self):
         return self._models
 
-    def get_session_torrents(self):
-        self.select_where("static","client",self.name)
-        for row in self.cur:
-            print(row)
+    @models.setter
+    def add_model(self,model):
+        key = model.torrent_hash
+        self.models[key] = model
+        return
+
+    def get_torrents(self):
+        for fields in self.retrieve_static_models():
+            model = StaticModel(**fields)
+            self.add_model(model)
+        return self.models
+
+    def get_torrent_data(self,torrent_hash):
+        model = self.models[torrent_hash]
+        if model.has_items():
+            data = model.get_data()
+
 
 
 
@@ -125,8 +138,18 @@ class SessionManager:
     def add_session(self,session):
         if session.name not in self.sessions:
             self.sessions[session.name] = session
-            session.get_session_torrents()
+            session.get_torrents()
         return
+
+    def pull_session(self,name):
+        if name in self.sessions:
+            return self.sessions[name]
+        raise Exception
+
+    def iter_session(self,session_name):
+        session = self.sessions[session_name]
+        for model in session.iter_models(self):
+            yield model
 
     def search_models(self,model_hash):
         for name,session in self.sessions.items():
