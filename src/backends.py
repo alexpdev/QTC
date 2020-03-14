@@ -4,10 +4,10 @@ from pathlib import Path
 from datetime import datetime
 from src.mixins import QueryMixin
 from src.serializer import Serializer
-from settings import DB_PATH,DATA_DIRNAME,CLIENTS
+from settings import DB_PATH,DATA_DIR,CLIENTS
 
 class BaseBackend:
-    data_dir = DATA_DIRNAME
+    data_dir = DATA_DIR
     fields = {
         "ignore" : ("auto_tmm",
                     "dl_limit",
@@ -55,21 +55,18 @@ class BaseBackend:
                     "uploaded_session",)}
 
 
+
+
 class SqlBackend(BaseBackend,QueryMixin):
-    db_path = DB_PATH
-    clients = CLIENTS
 
-    def retrieve_static_models(self):
-        self.select_where("static","client",self.name)
+    def get_models(self,client):
+        return self.query_models(client)
+
+    def query_models(self,client):
+        self.select_where("static","client",client)
+        static_fields = self.fields["static"]
         for row in self.cur:
-            fields = self.assign_static_fields(row)
-            yield fields
-
-    def assign_static_fields(self,data):
-        fields,labels = {},self.fields["static"]
-        for label,value in zip(labels,data):
-            fields[label] = value
-        return fields
+            yield dict(zip(static_fields,row))
 
     def check_path(self):
         if os.path.exists(self.db_path):
@@ -84,18 +81,29 @@ class SqlBackend(BaseBackend,QueryMixin):
         return
 
     def create_new_database(self):
+        """ Creates a new database \n
+            In --> None  \n
+            Out -> None """
         self.connect(self.db_path)
         self.create_static_table()
         self.create_data_table()
         return
 
     def create_data_table(self):
+        """ Creates a table in the database \n
+            -------
+            In -> None \n
+            Out -> None                     """
         data = self.fields["data"]
         kwargs = self.serializer.get_types(*data)
         self.create_table("data",foreign_key="hash",**kwargs)
         return
 
     def create_static_table(self):
+        """ Creates a table in the database \n
+            -------
+            In -> None \n
+            Out -> None                     """
         static = self.fields["static"]
         kwargs = self.serializer.get_types(*static)
         self.create_table("static",**kwargs)
@@ -112,12 +120,18 @@ class SqlBackend(BaseBackend,QueryMixin):
         return
 
     def hash_in_db(self,torrent_hash):
+        """ Checks if torrent already exists in database \n
+            In -> {torrent_hash}(string) \n
+            Out -> {Bool} """
         self.select_where("static","hash",torrent_hash)
         if self.cur.fetchone():
             return True
         return False
 
     def log_data(self,data,table_name):
+        """ Formats data to store in the database \n
+            In -> `(data {list[]} , table_name {str})` \n
+            Out -> None """
         fields = self.fields[table_name]
         kw1 = {}
         for label in fields:
@@ -129,7 +143,7 @@ class SqlBackend(BaseBackend,QueryMixin):
         return
 
 
-class LogBackend(BaseBackend):
+class FileStorageBackend(BaseBackend):
 
     def log_data(self,data):
         """ ```
@@ -179,7 +193,7 @@ class LogBackend(BaseBackend):
         return static
 
 
-class PickleBackend(LogBackend):
+class PickleBackend(FileStorageBackend):
 
     def log(self, data):
         data["timestamp"] = datetime.isoformat(datetime.now())
@@ -241,7 +255,7 @@ class PickleBackend(LogBackend):
         return path
 
 
-class JsonBackend(LogBackend):
+class JsonBackend(FileStorageBackend):
 
     def log(self, data):
         data["timestamp"] = datetime.isoformat(datetime.now())

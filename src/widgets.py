@@ -36,37 +36,90 @@ class ListWidget(QListWidget):
         return True
 
 
-class LoadTorrentButton(QPushButton):
-    def __init__(self,txt,parent=None):
-        super().__init__(self,txt,parent=parent)
+class TorrentList(ListWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+
+    def assign(self,manager,mainwindow,table,staticlist):
+        self.main = mainwindow
+        self.table = table
+        self.static = staticlist
+        self.manager = manager
+        return
+
+    def show_torrent_info(self):
+        self.static.isEmpty()
+        selected = self.currentItem()
+        if selected.model.has_items():
+            models = selected.model.data_models
+        else:
+            self.manager
+        fields = models[0].static_fields()
+        for k,v in fields.items():
+            txt = str(k) + "  :||:  " + str(v)
+            item = ListItem(txt)
+            item.setForeground(self.fg_brush)
+            item.setBackground(self.bg_brush)
+            item.setFont(self.sansfont)
+            self.static_info.appendItem(item)
+
+    def comparable_fields(self, models):
+        v_headers,rows,cols = [],len(models),None
+        for i,model in enumerate(models):
+            fields = model.tableFields()
+            v_headers.append(str(fields["Timestamp"]))
+            del fields["Timestamp"]
+            if not cols:
+                cols = len(fields)
+                h_headers = [str(j) for j in fields.keys() if j != "Timestamp"]
+                cells = [[] for j in range(len(models))]
+            for x,header in enumerate(fields):
+                item = QTableWidgetItem(str(fields[header]))
+                item.setForeground(self.fg_brush)
+                item.setBackground(self.bg_brush)
+                item.setFont(self.sansfont)
+                item.setFlags(Qt.ItemIsSelectable|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled)
+                cells[i].append(item)
+        self.table_data.setRowCount(rows)
+        self.table_data.setColumnCount(cols)
+        self.table_data.setHorizontalHeaderLabels(h_headers)
+        self.table_data.setVerticalHeaderLabels(v_headers)
+        for x,row in enumerate(cells):
+            for y,item in enumerate(row):
+                self.table_data.setItem(x,y,cells[x][y])
+
+
+class StaticButton(QPushButton):
+    def __init__(self,txt,parent):
+        super().__init__(txt,parent)
 
     @classmethod
-    def create(cls,window=None,listWidget=None,combo=None,txt=None):
-        btn = cls(txt,parent=None)
+    def create(cls,window,listWidget,combo,txt,parent):
+        btn = cls(txt,parent)
         btn.label = txt
         btn.window = window
         btn.listWidget = listWidget
         btn.combo = combo
-        btn.clicked.connect(show_info)
+        btn.clicked.connect(btn.show_info)
         return btn
 
     def check_if_empty(self):
-        return self.window.torrentList.isEmpty()
+        return self.listWidget.isEmpty()
+
+    def get_manager(self):
+        return self.window.manager
 
     def show_info(self):
-        window = self.window
         self.check_if_empty()
-        session_name = window.combo.currentText()
-        session = window.manager.pull_session()
-        for  in session.models:
-            torrent_name = session.models[hash_][0].name
-            item = ListItem(torrent_name)
-            item.hash_ = hash_
-            item.session = name
-            item.setForeground(self.fg_brush)
-            item.setBackground(self.bg_brush)
-            item.setFont(self.fancyfont)
-            self.torrentList.addItem(item)
+        session_name = self.combo.currentText()
+        manager = self.get_manager()
+        for model in manager.iter_session_models(session_name):
+            args = (model.name, model.torrent_hash, model.client)
+            item = ListItem.create(*args)
+            item.setForeground(self.window.fg_brush)
+            item.setBackground(self.window.bg_brush)
+            item.setFont(self.window.fancyfont)
+            self.listWidget.addItem(item)
         return
 
 
@@ -100,38 +153,12 @@ class ComboBox(QComboBox):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
-    def set_header(self,txt):
-        self.addItem(txt)
 
 
 class ListItem(QListWidgetItem):
-    def __init__(self,txt):
-        super().__init__(txt)
-        self._hash = None
-        self._session = None
-
-    @property
-    def torrent_hash(self):
-        if self._hash:
-            return self._hash
-        return
-
-    @torrent_hash.setter
-    def torrent_hash(self,torrent_hash):
-        if not self._hash:
-            self._hash = _hash
-        return
-
-    @property
-    def session(self):
-        if self._session:
-            return self._session
-        return
-
-    @session.setter
-    def session(self,session):
-        if not self._session:
-            self._session = session
-        return
-
-    def create(self)
+    def __init__(self,model):
+        super().__init__(model.name)
+        self.label = model.name
+        self.torrent_hash = model.torrent_hash
+        self.model = model
+        self.client = model.client

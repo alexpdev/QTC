@@ -11,44 +11,51 @@ from src.backends import SqlBackend,JsonBackend,PickleBackend
 from settings import DATA_DIRNAME
 
 
-class BaseSession(RequestMixin):
+class ClientSession(RequestMixin):
+    backends = {"json" : JsonBackend,
+                "pickle" : PickleBackend,
+                "sql" : SqlBackend}
 
-    def __init__(self,name=None,url=None,credentials=None):
-        self.serializer = Serializer()
+    def __init__(self,name=None,url=None,credentials=None,
+                            backend=None):
         self.name = name
         self.url = url
         self.credentials = credentials
+        self.backend = self.get_backend(backend)
+        if not serializer:
+            self.serializer = Serializer()
+        else:
+            self.serializer = serializer
 
-
-class SqlSession(BaseSession,SqlBackend):
-    def __init__(self,**kwargs):
-        super().__init__(**kwargs)
-        self._cursor = None
-        self._connection = None
-        self._models = {}
-        self.get_db()
+    def get_backend(self,backend):
+        return self.backends[backend]
 
     @property
     def models(self):
+        if not self._models:
+            return None
         return self._models
 
-    @models.setter
-    def add_model(self,model):
-        key = model.torrent_hash
-        self.models[key] = model
-        return
+    def add_to_models(self,model):
+        t_hash = model.torrent_hash
+        self._models[t_hash] = model
 
-    def get_torrents(self):
-        for fields in self.retrieve_static_models():
-            model = StaticModel(**fields)
-            self.add_model(model)
-        return self.models
+    def create_models(self):
+        for kwargs in self.backend.get_models(self.name):
+            model = StaticModel(**kwargs)
+            self.add_to_models(model)
+        return True
 
     def get_torrent_data(self,torrent_hash):
         model = self.models[torrent_hash]
         if model.has_items():
             data = model.get_data()
 
+    def iter_models(self):
+        if not self.models:
+            self.create_models()
+        for k,v in self.models.items():
+            yield v
 
 
 
@@ -138,17 +145,16 @@ class SessionManager:
     def add_session(self,session):
         if session.name not in self.sessions:
             self.sessions[session.name] = session
-            session.get_torrents()
-        return
+
 
     def pull_session(self,name):
         if name in self.sessions:
             return self.sessions[name]
         raise Exception
 
-    def iter_session(self,session_name):
+    def iter_session_models(self,session_name):
         session = self.sessions[session_name]
-        for model in session.iter_models(self):
+        for model in session.iter_models():
             yield model
 
     def search_models(self,model_hash):
