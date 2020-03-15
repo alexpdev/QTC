@@ -1,20 +1,29 @@
 
+# enviornment packages
 node_modules/
 venv/
-__pycache__/
-
-temp/
-data/
 .vscode/
-*.pyc
 *.env
 .env
-settings.py
-data/*.json
-script.py
-books_paths.json
+activate.bat
+activate.ps1
+activate
 
+
+# bite-code
+__pycache__/
+*.pyc
+*.bin
+
+
+# temp files
+temp/
+data/*.json
 *.pickle
 *.log
-*.bin
+
+
+# user-specific logfiles
+data/
+settings.py
 
