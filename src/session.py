@@ -65,9 +65,6 @@ class SqlSession(QueryMixin):
         win = Win.create(self)
         self.win = win
 
-
-
-
 ## class JsonSession(BaseSession,JsonBackend):
 #     def __init__(self,**kwargs):
 #         super().__init__(**kwargs)

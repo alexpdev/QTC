@@ -1,7 +1,8 @@
 import os
 from datetime import datetime
+
+from src.mixins import QueryMixin, RequestMixin
 from src.serialize import Converter as Conv
-from src.mixins import RequestMixin,QueryMixin
 
 
 class DatabaseError(Exception):

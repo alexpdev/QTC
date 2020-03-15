@@ -1,25 +1,21 @@
 import sys
 
-from PyQt5.QtWidgets import (QApplication, QFrame,
-                             QGridLayout, QHBoxLayout,
-                             QLabel, QListView, QListWidget,
-                             QListWidgetItem, QMainWindow,
-                             QMenu, QMenuBar, QOpenGLWidget,
-                             QPushButton, QStatusBar, QTabWidget,
-                             QTableWidget, QTableWidgetItem,
-                             QVBoxLayout, QWidget)
-
-from PyQt5.QtGui import (QFont, QBrush, QColor,
-                         QConicalGradient, QCursor,
-                         QFontDatabase, QIcon,
-                         QLinearGradient, QPalette,
-                         QPainter, QPixmap, QRadialGradient)
-
 from PyQt5.QtCore import (QCoreApplication, QMetaObject,
-                          QObject, QPoint, QRect, QSize, QUrl, Qt)
+                          QObject, QPoint, QRect, QSize, Qt, QUrl)
 
-from src.widgets import (ListItem, ComboBox, SansFont,
-                         FancyFont, ListWidget,StaticButton)
+from PyQt5.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+                         QFont,QFontDatabase, QIcon, QLinearGradient,
+                         QPainter, QPalette, QPixmap, QRadialGradient)
+
+from PyQt5.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
+                             QLabel, QListView, QListWidget, QListWidgetItem,
+                             QMainWindow, QMenu, QMenuBar, QOpenGLWidget,
+                             QPushButton, QStatusBar, QTableWidget,
+                             QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget)
+
+from src.widgets import (ComboBox, FancyFont, ListItem,
+                         TorrentNames, ListWidget, SansFont, StaticButton)
+
 
 class Win(QMainWindow):
 
@@ -47,24 +43,22 @@ class Win(QMainWindow):
         self.gridLayout.setContentsMargins(5, 5, 5, 5)
 
         # List Widgets
-        self.static_info = ListWidget(parent=self.gridLayoutWidget)
-        self.static_info.setObjectName(u"Static Torrent Info")
-        self.static_info.setFont(self.sansfont)
-        self.torrentList = ListWidget(parent=self.gridLayoutWidget)
-        self.torrentList.setObjectName(u"TorrentList")
-        self.torrentList.setFont(self.sansfont)
-        self.torrentList.itemSelectionChanged.connect(self.show_torrent_info)
+        self.static = ListWidget(parent=self.gridLayoutWidget)
+        self.static.setObjectName(u"static_torrent_data")
+        self.static.setFont(self.sansfont)
+        self.torrentNames = TorrentNames(parent=self.gridLayoutWidget)
+        self.torrentNames.setObjectName(u"Names")
+        self.torrentNames.setFont(self.sansfont)
 
         # Combo Box
         self.combo = ComboBox(self.gridLayoutWidget)
         self.combo.setObjectName(u"comboBox")
         self.combo.setEditable(False)
         self.btn1 = StaticButton("Select",self.gridLayoutWidget)
-        self.btn1.assign(self.combo,self.session,self.torrentList)
         self.btn1.setObjectName(u"staticButton")
-        # self.btn1.clicked.connect(self.show_info)
-        self.gridLayout.addWidget(self.torrentList, 0, 0, 1, 1)
-        self.gridLayout.addWidget(self.static_info, 0, 1, 3, 1)
+
+        self.gridLayout.addWidget(self.torrentNames, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.static, 0, 1, 3, 1)
         self.gridLayout.addWidget(self.combo, 1, 0, 1, 1)
         self.gridLayout.addWidget(self.btn1, 2, 0, 1, 1)
 
@@ -112,9 +106,9 @@ class Win(QMainWindow):
         menubar.addMenu(self.help_menu)
         self.tabWidget.setCurrentIndex(0)
         QMetaObject.connectSlotsByName(self)
-        sorting = self.table_data.isSortingEnabled()
-        self.static_info.setSortingEnabled(True)
-        self.table_data.setSortingEnabled(sorting)
+        self.combo.assign(self.session)
+        self.btn1.assign(self.combo,self.session,self.torrentNames)
+        self.torrentNames.assign(self.session,self.static,self.table_data)
 
     def print_something(self):
         print("I have been clicked")
