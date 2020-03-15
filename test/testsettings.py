@@ -14,13 +14,13 @@ LOCAL1_CLIENT = os.environ["LOCAL1_CLIENT"]
 LOCAL2_CLIENT = os.environ["LOCAL2_CLIENT"]
 CLIENTS = [LOCAL1_CLIENT,LOCAL2_CLIENT,"seedbox"]
 DETAILS = {
-    LOCAL1_CLIENT:{
-        "url": LOCAL1,
-        "credentials":{
-            "username" : USER,
-            "password" : PASS
-        }
-    },
+    # LOCAL1_CLIENT:{
+    #     "url": LOCAL1,
+    #     "credentials":{
+    #         "username" : USER,
+    #         "password" : PASS
+    #     }
+    # },
     LOCAL2_CLIENT :{
         "url": LOCAL2,
         "credentials":{

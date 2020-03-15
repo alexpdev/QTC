@@ -1,10 +1,11 @@
-import os
-import sys
 import json
+import os
 import pickle
-import requests
 import sqlite3 as sql
+import sys
 from datetime import datetime
+
+import requests
 
 
 class RequestError(Exception):
@@ -21,9 +22,6 @@ class NoDatabaseConnected(Exception):
 
 class RequestMixin:
     def login(self,url=None,credentials=None):
-        if not url:
-            url = self.url
-            credentials = self.credentials
         url += "auth/login"
         response = requests.get(url, params=credentials)
         self.check_response(response)
@@ -48,59 +46,68 @@ class RequestMixin:
 
 class QueryMixin:
 
-    def get_cursor(self,path=None):
-        if not path:
-            path = self.path
-        if self.connect:
-            return self.cursor
-        self.connect = sql.connect(path)
-        self.cursor = self.connect.cursor()
-        return self.cursor
+    def get_connection(self):
+        self.conn = sql.connect(self.path)
+        return self.conn
+
+    def get_cursor(self):
+        conn = sql.connect(self.path)
+        conn.row_factory = sql.Row
+        cur = conn.cursor()
+        return cur
 
     def create_db_table(self,headers,table_name):
+        cur = self.conn.cursor()
         statement = f"CREATE TABLE {table_name} ({headers})"
-        self.cursor.execute(statement)
-        self.connect.commit()
+        cur.execute(statement)
+        self.conn.commit()
+        cur.close()
         return
 
     def save_to_db(self,torrent,table_name):
+        cur = self.conn.cursor()
         columns, values, params = self.get_save_values(torrent)
         stat = f"INSERT INTO {table_name} ({columns}) VALUES ({params})"
-        self.cursor.execute(stat,tuple(values))
-        self.connect.commit()
+        cur.execute(stat,tuple(values))
+        self.conn.commit()
+        cur.close()
+        return
 
     def save_many_to_db(self,columns,commit_values,params,table_name):
+        cur = self.conn.cursor()
         statement = f"INSERT INTO {table_name} ({columns}) VALUES ({params})"
-        cursor = self.get_cursor(self.path)
-        cursor.executemany(statement,commit_values)
-        self.connect.commit()
+        cur.executemany(statement,commit_values)
+        self.conn.commit()
+        cur.close()
+        return
+
 
     def create_table(self,table_name,fields):
+        cur = self.conn.cursor()
         fields = ", ".join(fields)
         statement = f"CREATE TABLE {table_name} ({fields})"
-        self.cursor.execute(statement)
-        self.connect.commit()
+        cur.execute(statement)
+        self.conn.commit()
+        cur.close()
         return
 
     def torrent_exists(self,table,field,value):
         row = self.select_where(table,field,value)
-        if not row: return False
-        return True
+        try:
+            r = next(row)
+            return True
+        except StopIteration:
+            return False
 
     def select_rows(self,table,*args):
+        cur = self.get_cursor()
+        args = "*" if not args else args
         statement = f"SELECT {args} FROM {table}"
-        self.cursor.execute(statement)
-        return self.cursor
+        rows = cur.execute(statement)
+        return rows
 
     def select_where(self,table,field,value):
-        stmnt = f"SELECT * FROM {table} WHERE ({field} = ?)"
-        self.cursor.execute(stmnt,(value,))
-        return self.cursor
-
-    def get_save_values(self,torrent):
-        column,values,params = [],[],[]
-        for k,v in torrent.items():
-            column.append(k)
-            values.append(v)
-            params.append("?")
-        return ", ".join(column), values, ", ".join(params)
+        cur = self.get_cursor()
+        stmnt = f"SELECT * FROM {table} WHERE {field} = ?"
+        rows = cur.execute(stmnt,(value,))
+        return rows

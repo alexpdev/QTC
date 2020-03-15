@@ -40,6 +40,7 @@ def main():
     clients = DETAILS
     db_name = DB_NAME
     storage = SqlStorage(db_dir,clients,db_name)
+    log_thread = Thread(log,(storage,))
 
 
 

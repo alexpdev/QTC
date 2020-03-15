@@ -1,39 +1,49 @@
 import os
 from datetime import datetime
-# from settings import DB_PATH,DATA_DIR,CLIENTS
-from src.serializer import table_details
+from src.serialize import Converter as Conv
 from src.mixins import RequestMixin,QueryMixin
+
+
+class DatabaseError(Exception):
+    pass
+
 
 class BaseStorage(RequestMixin):
     def __init__(self,path,clients,*args,**kwargs):
-        self.data_dir = path
+        self.path = path
 
         self.clients = clients
 
         self.static_fields = ("hash", "client", "name",
-                              "tracker", "magnet_uri", "save_path",
-                              "total_size", "added_on", "completion_on",
+                              "tracker", "magnet_uri",
+                              "save_path", "total_size",
+                              "added_on", "completion_on",
                               "state", "category", "tags")
 
-        self.data_fields = ("hash", "client", "timestamp","ratio","uploaded",
-        "time_active","completed","size","downloaded","num_seeds","num_leechs","last_activity", "seen_complete","dlspeed","upspeed","num_complete","num_incomplete","downloaded_session","uploaded_session")
+        self.data_fields = ("hash", "client", "timestamp",
+                            "ratio", "uploaded", "time_active",
+                            "completed", "size", "downloaded",
+                            "num_seeds", "num_leechs", "last_activity",
+                            "seen_complete", "dlspeed", "upspeed",
+                            "num_complete", "num_incomplete",
+                            "downloaded_session", "uploaded_session")
 
-    def make_client_requests(self,client):
+    def make_client_requests(self, client):
         client_details = self.clients[client]
         url = client_details["url"]
         credentials = client_details["credentials"]
-        resp = self.login(url=url,credentials=credentials)
-        data = self.get_info(resp,url=url)
+        resp = self.login(url=url, credentials=credentials)
+        data = self.get_info(resp, url=url)
         return data
 
-    def filter_static_fields(self,torrent):
+    def filter_static_fields(self, torrent):
         info = torrent.copy()
         for k in torrent:
             if k not in self.static_fields:
                 del info[k]
         return info
 
-    def filter_data_fields(self,torrent):
+    def filter_data_fields(self, torrent):
         info = torrent.copy()
         for k in torrent:
             if k not in self.data_fields:
@@ -43,80 +53,79 @@ class BaseStorage(RequestMixin):
     def log(self):
         for client in self.clients:
             data = self.make_client_requests(client)
-            self.log_data(client,data)
+            self.log_data(client, data)
 
 
-class SqlStorage(BaseStorage,QueryMixin):
-    def __init__(self,path,clients,db_name,*args,**kwargs):
-        super().__init__(path,clients)
-        self.data_dir = path
-        self.name = db_name
+class SqlStorage(BaseStorage, QueryMixin):
+    def __init__(self, path, clients, *args, **kwargs):
+        super().__init__(path, clients)
+        self.path = path
         self.clients = clients
-        self.connect = None
-        self.cursor = None
-
-    @property
-    def path(self):
-        path = self.data_dir / self.name
-        return path
+        self.conn = None
 
     def check_path(self):
         if os.path.isfile(self.path):
+            self.get_connection()
             return True
         return False
 
-    def log_data(self,client,data):
+    def log_data(self, client, data):
         if not self.check_path():
+            self.get_connection()
             sample = data[0]
-            self.first_run_script(client,sample)
+            self.first_run_script(client, sample)
             del data[0]
-        self.format_data(client,data)
+        self.format_data(client, data)
+        self.conn.close()
 
-    def format_data(self,client,data):
+    def format_data(self, client, data):
+        cols, vals = None, []
+        for torrent in self.filter_new(client, data):
+            data = self.filter_data_fields(torrent)
+            columns, values, params = self.get_save_values(data)
+            if cols and columns != cols:
+                raise DatabaseError
+            cols = columns
+            vals.append(tuple(values))
+        if vals: self.save_many_to_db(cols, vals, params, "data")
+        return
+
+    def filter_new(self, client, data):
         timestamp = datetime.isoformat(datetime.now())
-        many_seq = []
         for torrent in data:
             torrent["client"] = client
             torrent["timestamp"] = timestamp
-            if not self.torrent_exists("static","hash",torrent["hash"]):
+            if self.torrent_exists("static", "hash", torrent["hash"]):
+                yield torrent
+            else:
                 self.create_new_torrent(torrent)
-            else: many_seq.append(torrent)
-        self.format_many(many_seq)
 
-    def format_many(self,many_seq):
-        db_columns = None
-        db_values = []
-        for torrent in many_seq:
-            data = self.filter_data_fields(torrent)
-            result = self.get_save_values(data)
-            columns, values, params = result
-            if db_columns and columns != db_columns:
-                self.save_many_to_db(db_columns,db_values,params,"data")
-                db_values = []
-            db_columns = columns
-            db_values.append(tuple(values))
-        self.save_many_to_db(db_columns,db_values,params,"data")
-        return
+    def get_save_values(self,torrent):
+        column,values,params = [],[],[]
+        for k,v in torrent.items():
+            column.append(k)
+            values.append(v)
+            params.append("?")
+        return ", ".join(column), values, ", ".join(params)
 
-    def create_new_torrent(self,torrent):
+    def create_new_torrent(self, torrent):
         staticFields = self.filter_static_fields(torrent)
         dataFields = self.filter_data_fields(torrent)
-        self.save_to_db(staticFields,"static")
-        self.save_to_db(dataFields,"data")
+        self.save_to_db(staticFields, "static")
+        self.save_to_db(dataFields, "data")
         return
 
-    def first_run_script(self,client,sample):
-        self.cursor = self.get_cursor(self.path)
+    def first_run_script(self, client, sample):
         timestamp = str(datetime.isoformat(datetime.now()))
         sample["client"] = client
         sample["timestamp"] = timestamp
-        d_headers,s_headers = table_details(sample)
+        d_headers, s_headers = Conv.table_details(sample)
         static_headers = ", ".join(s_headers)
-        self.create_db_table(static_headers,"static")
+        self.create_db_table(static_headers, "static")
         data_headers = ", ".join(d_headers)
-        self.create_db_table(data_headers,"data")
+        self.create_db_table(data_headers, "data")
         staticFields = self.filter_static_fields(sample)
-        self.save_to_db(staticFields,"static")
+        self.save_to_db(staticFields, "static")
         dataFields = self.filter_data_fields(sample)
-        self.save_to_db(dataFields,"data")
+        self.save_to_db(dataFields, "data")
         return

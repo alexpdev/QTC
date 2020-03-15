@@ -1,18 +1,32 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QFrame, QGridLayout, QHBoxLayout, QLabel, QListView, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMenuBar, QOpenGLWidget, QPushButton, QStatusBar, QTabWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
-from PyQt5.QtGui import (QFont,QBrush, QColor, QConicalGradient, QCursor,
-    QFontDatabase, QIcon, QLinearGradient, QPalette, QPainter, QPixmap,
-    QRadialGradient)
-from PyQt5.QtCore import (QCoreApplication, QMetaObject, QObject, QPoint,
-    QRect, QSize, QUrl, Qt)
-from src.widgets import (ListItem, ComboBox, SansFont, FancyFont, ListWidget,StaticButton)
 
+from PyQt5.QtWidgets import (QApplication, QFrame,
+                             QGridLayout, QHBoxLayout,
+                             QLabel, QListView, QListWidget,
+                             QListWidgetItem, QMainWindow,
+                             QMenu, QMenuBar, QOpenGLWidget,
+                             QPushButton, QStatusBar, QTabWidget,
+                             QTableWidget, QTableWidgetItem,
+                             QVBoxLayout, QWidget)
+
+from PyQt5.QtGui import (QFont, QBrush, QColor,
+                         QConicalGradient, QCursor,
+                         QFontDatabase, QIcon,
+                         QLinearGradient, QPalette,
+                         QPainter, QPixmap, QRadialGradient)
+
+from PyQt5.QtCore import (QCoreApplication, QMetaObject,
+                          QObject, QPoint, QRect, QSize, QUrl, Qt)
+
+from src.widgets import (ListItem, ComboBox, SansFont,
+                         FancyFont, ListWidget,StaticButton)
 
 class Win(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.setup_ui()
+
 
     def load_styling_tools(self):
         self.fancyfont = FancyFont()
@@ -45,10 +59,8 @@ class Win(QMainWindow):
         self.combo = ComboBox(self.gridLayoutWidget)
         self.combo.setObjectName(u"comboBox")
         self.combo.setEditable(False)
-        btn_args = (self,self.torrentList,self.combo,
-                    "Torrent Names",self.gridLayoutWidget)
-
-        self.btn1 = StaticButton.create(*btn_args)
+        self.btn1 = StaticButton("Select",self.gridLayoutWidget)
+        self.btn1.assign(self.combo,self.session,self.torrentList)
         self.btn1.setObjectName(u"staticButton")
         # self.btn1.clicked.connect(self.show_info)
         self.gridLayout.addWidget(self.torrentList, 0, 0, 1, 1)
@@ -111,28 +123,10 @@ class Win(QMainWindow):
         self.destroy()
         sys.exit(app.exec_())
 
-
-
-    # def show_info(self):
-    #     self.torrentList.isEmpty()
-    #     name = self.combo.currentText()
-    #     session = self.manager.sessions[name]
-    #     for torrent_hash in session.models:
-    #         model = session.models[torrent_hash]
-    #         item = ListItem(model.name)
-    #         item.torrent_hash = torrent_hash
-    #         item.session = name
-    #         item.setForeground(self.fg_brush)
-    #         item.setBackground(self.bg_brush)
-    #         item.setFont(self.fancyfont)
-    #         self.torrentList.appendItem(item)
-    #     return
-
-    def set_session_manager(self, manager):
-        self.manager = manager
-        for session in self.manager.sessions:
-            self.combo.addItem(session)
-        return
+    @classmethod
+    def create(cls,session):
+        win = cls()
+        win.session = session
 
 
 if __name__ == "__main__":
