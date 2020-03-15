@@ -29,8 +29,9 @@ class BaseSession:
                             "downloaded_session", "uploaded_session")
 
 
-class SqlSession(QueryMixin):
+class SqlSession(QueryMixin,BaseSession):
     def __init__(self,path,clients,*args,**kwargs):
+        super().__init__(path,clients)
         self.path = path
         self.clients = clients
 
@@ -49,15 +50,15 @@ class SqlSession(QueryMixin):
 
     def get_data_rows(self,torrent_hash,client):
         fields = self.data_fields
-        args = ("data",fields,"hash",torrent_hash)
-        rows = self.select_columns_where(*args)
+        args = ("data","hash",torrent_hash)
+        rows = self.select_where(*args)
         serial_data = Conv.convert_values(rows)
         return
 
     def get_static_rows(self,torrent_hash,client):
         fields = self.static_fields
-        args = ("static",fields,"hash",torrent_hash)
-        rows = self.select_columns_where(*args)
+        args = ("static","hash",torrent_hash)
+        rows = self.select_where(*args)
         return Conv.convert_values(rows)
 
     def create_window(self):

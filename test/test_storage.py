@@ -20,6 +20,9 @@ class TestStorage(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        path = DATA_DIR / DB_NAME
+        if os.path.isfile(path):
+            os.remove(path)
         pass
 
     @classmethod
@@ -29,8 +32,6 @@ class TestStorage(TestCase):
     def setUp(self):
         self.path = DATA_DIR / DB_NAME
         self.clients = DETAILS
-        if os.path.isfile(self.path):
-            os.remove(self.path)
 
     def tearDown(self):
         db = self.path
