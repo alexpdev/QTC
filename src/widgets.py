@@ -3,6 +3,10 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QComboBox, QFrame, QListWidget, QListWidgetItem,
                              QPushButton, QTableWidget, QTableWidgetItem)
 
+from PyQt5.QtCore import Qt
+
+
+
 
 class TableWidget(QTableWidget):
     def __init__(self,parent=None):
@@ -39,15 +43,18 @@ class ListWidget(QListWidget):
 class TorrentNames(ListWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+        self.sansfont = SansFont()
 
-    def assign(self,session,static,table):
+    def assign(self,session,static,table,painters):
         self.session = session
+        self.fg_brush = painters[0]
+        self.bg_brush = painters[1]
         self.static = static
         self.table = table
         self.itemSelectionChanged.connect(self.display_info)
 
     def display_info(self):
-        self.static.isempty()
+        self.static.isEmpty()
         selected = self.currentItem()
         t_hash = selected.t_hash
         client = selected.client
@@ -56,22 +63,29 @@ class TorrentNames(ListWidget):
 
     def pull_data_from_db(self,t_hash,client):
         db_rows = self.session.get_data_rows(t_hash,client)
-        headers,rows,cols = None,len(db_rows),None
+        rows = len(db_rows)
         model = db_rows[0]
         headers = tuple(k for k,v in model)
         cols = len(headers)
-        self.table_data.setRowCount(rows)
-        self.table_data.setColumnCount(cols)
-        self.table_data.setHorizontalHeaderLabels(headers)
+        self.table.setRowCount(rows)
+        flags = (Qt.ItemIsSelectable|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled)
+        self.table.setColumnCount(cols)
+        self.table.setHorizontalHeaderLabels(headers)
         for x,row in enumerate(db_rows):
             for y,value in enumerate(row):
-                self.table_data.setItem(x,y,value[1])
+                item = QTableWidgetItem(str(value[1]))
+                item.setForeground(self.fg_brush)
+                item.setBackground(self.bg_brush)
+                item.setFont(self.sansfont)
+                item.setFlags(flags)
+                self.table.setItem(x,y,item)
         return
 
     def pull_static_from_db(self,t_hash,client):
         values = self.session.get_static_rows(t_hash,client)
-        for entry in itertools.chain.from_iterable(values):
-            item = ListItem(entry)
+        for key,value in itertools.chain.from_iterable(values):
+            txt = f"{key}  |  {value}"
+            item = ListItem(txt)
             item.setForeground(self.fg_brush)
             item.setBackground(self.bg_brush)
             item.setFont(self.sansfont)
@@ -83,21 +97,25 @@ class StaticButton(QPushButton):
     def __init__(self,txt,parent):
         super().__init__(txt,parent)
 
-    def assign(self,combo,session,torrentNames):
+
+    def assign(self,combo,painters,session,torrentNames):
         self.combo = combo
+        self.fg_brush = painters[0]
+        self.bg_brush = painters[1]
         self.session = session
+        self.fancyfont = FancyFont()
         self.torrentNames = torrentNames
         self.clicked.connect(self.show_info)
 
     def show_info(self):
-        self.torrentNames.check_if_empty()
+        self.torrentNames.isEmpty()
         session_name = self.combo.currentText()
         for item in self.session.get_torrent_names(session_name):
             name,torrent_hash,client = item
             item = ListItem.create(*item)
-            item.setForeground(self.window.fg_brush)
-            item.setBackground(self.window.bg_brush)
-            item.setFont(self.window.fancyfont)
+            item.setForeground(self.fg_brush)
+            item.setBackground(self.bg_brush)
+            item.setFont(self.fancyfont)
             self.torrentNames.addItem(item)
         return
 
@@ -132,7 +150,8 @@ class ComboBox(QComboBox):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
-    def assign(self,session):
+    def assign(self,session,painters):
+        self.painters = painters
         self.session = session
         for client in self.session.get_client_names():
             self.addItem(client)

@@ -250,7 +250,7 @@ class Converter:
     # converter 3
     @classmethod
     def convert_bps(cls,data):
-        val = 2(data)
+        val = cls.convert_bytes(data)
         val += "/s"
         return val
 

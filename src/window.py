@@ -21,6 +21,7 @@ class Win(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+        self.session = None
         self.setup_ui()
 
 
@@ -29,6 +30,7 @@ class Win(QMainWindow):
         self.sansfont = SansFont()
         self.fg_brush = QBrush(QColor(90,223,255, 255))
         self.bg_brush = QBrush(QColor(7,14,3, 255))
+        self.painters = [self.fg_brush,self.bg_brush]
 
     def setup_ui(self):
         self.setWindowTitle("Torrent Companion")
@@ -106,9 +108,6 @@ class Win(QMainWindow):
         menubar.addMenu(self.help_menu)
         self.tabWidget.setCurrentIndex(0)
         QMetaObject.connectSlotsByName(self)
-        self.combo.assign(self.session)
-        self.btn1.assign(self.combo,self.session,self.torrentNames)
-        self.torrentNames.assign(self.session,self.static,self.table_data)
 
     def print_something(self):
         print("I have been clicked")
@@ -117,10 +116,14 @@ class Win(QMainWindow):
         self.destroy()
         sys.exit(app.exec_())
 
-    @classmethod
-    def create(cls,session):
-        win = cls()
-        win.session = session
+    def assign_session(self,session):
+        self.session = session
+        self.combo.assign(self.session,self.painters)
+        self.btn1.assign(self.combo,self.painters,
+                        self.session,self.torrentNames)
+        self.torrentNames.assign(self.session,self.static,
+                                self.table_data,self.painters)
+
 
 
 if __name__ == "__main__":

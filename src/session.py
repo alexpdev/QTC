@@ -49,22 +49,24 @@ class SqlSession(QueryMixin,BaseSession):
             yield v
 
     def get_data_rows(self,torrent_hash,client):
-        fields = self.data_fields
         args = ("data","hash",torrent_hash)
         rows = self.select_where(*args)
-        serial_data = Conv.convert_values(rows)
-        return
+        return Conv.convert_values(rows)
+
 
     def get_static_rows(self,torrent_hash,client):
-        fields = self.static_fields
         args = ("static","hash",torrent_hash)
         rows = self.select_where(*args)
         return Conv.convert_values(rows)
 
-    def create_window(self):
+
+    def mainloop(self):
         app = QApplication(sys.argv)
-        win = Win.create(self)
-        self.win = win
+        win = Win()
+        win.assign_session(self)
+        win.show()
+        sys.exit(app.exec_())
+
 
 ## class JsonSession(BaseSession,JsonBackend):
 #     def __init__(self,**kwargs):

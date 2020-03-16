@@ -108,6 +108,6 @@ class QueryMixin:
 
     def select_where(self,table,field,value):
         cur = self.get_cursor()
-        stmnt = f"SELECT * FROM {table} WHERE {field} = ?"
+        stmnt = f"SELECT * FROM {table} WHERE {field} == ?"
         rows = cur.execute(stmnt,(value,))
         return rows
