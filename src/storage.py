@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+import sqlite3
 
 from src.mixins import QueryMixin, RequestMixin
 from src.serialize import Converter as Conv
@@ -51,10 +52,14 @@ class BaseStorage(RequestMixin):
                 del info[k]
         return info
 
+    def check_logtimes(self):
+        pass
+
     def log(self):
-        for client in self.clients:
-            data = self.make_client_requests(client)
-            self.log_data(client, data)
+        pass
+
+    def log_data(self,*args,**kwargs):
+        pass
 
 
 class SqlStorage(BaseStorage, QueryMixin):
@@ -70,6 +75,26 @@ class SqlStorage(BaseStorage, QueryMixin):
             return True
         return False
 
+    def init_checks(self):
+        if not self.check_path():
+            DbCreatorScript(self.path,self.clients)
+            return
+        try:
+            self.select_where("")
+
+    def log(self):
+        self.init_checks()
+        if not self.check_path():
+            DbCreatorScript(self.path,self.clients)
+
+        self.check_logtimes()
+        for client in self.clients:
+            data = self.make_client_requests(client)
+            self.log_data(client, data)
+
+    def check_logtimes(self):
+
+
     def log_data(self, client, data):
         if not self.check_path():
             self.get_connection()
@@ -77,7 +102,7 @@ class SqlStorage(BaseStorage, QueryMixin):
             self.first_run_script(client, sample)
             del data[0]
         self.format_data(client, data)
-        self.conn.close()
+        return
 
     def format_data(self, client, data):
         cols, vals = None, []
@@ -116,17 +141,23 @@ class SqlStorage(BaseStorage, QueryMixin):
         self.save_to_db(dataFields, "data")
         return
 
-    def first_run_script(self, client, sample):
-        timestamp = str(datetime.isoformat(datetime.now()))
-        sample["client"] = client
-        sample["timestamp"] = timestamp
-        d_headers, s_headers = Conv.table_details(sample)
-        static_headers = ", ".join(s_headers)
-        self.create_db_table(static_headers, "static")
-        data_headers = ", ".join(d_headers)
-        self.create_db_table(data_headers, "data")
-        staticFields = self.filter_static_fields(sample)
-        self.save_to_db(staticFields, "static")
-        dataFields = self.filter_data_fields(sample)
-        self.save_to_db(dataFields, "data")
+
+
+
+class DbCreatorScript(SqlStorage):
+    def __init__(self,path,clients,*args,**kwargs):
+        super().__init__(path,clients,*args,**kwargs)
+        self.timestamp = datetime.isoformat(datetime.now())
+        self.path = path
+        self.clients = clients
+        self.datatypes = Conv.datatypes
+        self.first_run_script()
+
+    def first_run_script(self):
+        conn = sqlite3.connect(self.path)
+        stIn = [f'{i} {self.datatypes[i]["type"]}' for i in self.static_fields]
+        dtIn = [f'{i} {self.datatypes[i]["type"]}' for i in self.data_fields]
+        self.create_db_table(", ".join(stIn), "static")
+        self.create_db_table(", ".join(dtIn), "data")
+        self.create_db_table("timestamp","logtime")
         return

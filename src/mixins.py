@@ -56,13 +56,19 @@ class QueryMixin:
         cur = conn.cursor()
         return cur
 
-    def create_db_table(self,headers,table_name):
+    def torrent_exists(self,table,field,value):
+        row = self.select_where(table,field,value)
+        try:
+            r = next(row)
+            return True
+        except StopIteration:
+            return False
+
+    def log_timestamp(self,stamp):
         cur = self.conn.cursor()
-        statement = f"CREATE TABLE {table_name} ({headers})"
-        cur.execute(statement)
-        self.conn.commit()
+        statement = f"INSERT INTO logtime VALUES (?)"
+        cur.execute(statement,tuple(stamp))
         cur.close()
-        return
 
     def save_to_db(self,torrent,table_name):
         cur = self.conn.cursor()
@@ -81,24 +87,6 @@ class QueryMixin:
         cur.close()
         return
 
-
-    def create_table(self,table_name,fields):
-        cur = self.conn.cursor()
-        fields = ", ".join(fields)
-        statement = f"CREATE TABLE {table_name} ({fields})"
-        cur.execute(statement)
-        self.conn.commit()
-        cur.close()
-        return
-
-    def torrent_exists(self,table,field,value):
-        row = self.select_where(table,field,value)
-        try:
-            r = next(row)
-            return True
-        except StopIteration:
-            return False
-
     def select_rows(self,table,*args):
         cur = self.get_cursor()
         args = "*" if not args else args
@@ -111,3 +99,11 @@ class QueryMixin:
         stmnt = f"SELECT * FROM {table} WHERE {field} == ?"
         rows = cur.execute(stmnt,(value,))
         return rows
+
+    def create_db_table(self,headers,table_name):
+        cur = self.conn.cursor()
+        statement = f"CREATE TABLE {table_name} ({headers})"
+        cur.execute(statement)
+        self.conn.commit()
+        cur.close()
+        return
