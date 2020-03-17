@@ -6,9 +6,15 @@ from src.mixins import QueryMixin, RequestMixin
 from src.serialize import Converter as Conv
 
 
+
 class DatabaseError(Exception):
     pass
 
+class DatabasePathError(DatabaseError):
+    pass
+
+class LessThanAnHour(DatabaseError):
+    pass
 
 class BaseStorage(RequestMixin):
     def __init__(self,path,clients,*args,**kwargs):
@@ -52,15 +58,6 @@ class BaseStorage(RequestMixin):
                 del info[k]
         return info
 
-    def check_logtimes(self):
-        pass
-
-    def log(self):
-        pass
-
-    def log_data(self,*args,**kwargs):
-        pass
-
 
 class SqlStorage(BaseStorage, QueryMixin):
     def __init__(self, path, clients, *args, **kwargs):
@@ -69,69 +66,60 @@ class SqlStorage(BaseStorage, QueryMixin):
         self.clients = clients
         self.conn = None
 
+    def log(self):
+        if not self.check_path():
+            CreatorScript(self.path,self.clients)
+            self.get_connection()
+        if not self.check_timelog():
+            return "Not Now"
+        data = []
+        for client in self.clients:
+            response = self.make_client_requests(client)
+            for item in response:
+                item["timestamp"] = self.timestamp
+                item["client"] = client
+                data.append(item)
+        self.format_data(data)
+
+    def check_timelog(self):
+        timestamp = datetime.now()
+        self.timestamp = datetime.isoformat(timestamp)
+        rows = self.select_rows("stamps")
+        for item in rows:
+            print(tuple(item),item["timestamp"])
+            row_stamp = datetime.fromisoformat(item["timestamp"])
+            if (timestamp - row_stamp).seconds < 86400:
+                return False
+        self.log_timestamp(str(self.timestamp))
+        return True
+
     def check_path(self):
         if os.path.isfile(self.path):
             self.get_connection()
             return True
         return False
 
-    def init_checks(self):
-        if not self.check_path():
-            DbCreatorScript(self.path,self.clients)
-            return
-        try:
-            self.select_where("")
-
-    def log(self):
-        self.init_checks()
-        if not self.check_path():
-            DbCreatorScript(self.path,self.clients)
-
-        self.check_logtimes()
-        for client in self.clients:
-            data = self.make_client_requests(client)
-            self.log_data(client, data)
-
-    def check_logtimes(self):
-
-
-    def log_data(self, client, data):
-        if not self.check_path():
-            self.get_connection()
-            sample = data[0]
-            self.first_run_script(client, sample)
-            del data[0]
-        self.format_data(client, data)
-        return
-
-    def format_data(self, client, data):
-        cols, vals = None, []
-        for torrent in self.filter_new(client, data):
-            data = self.filter_data_fields(torrent)
-            columns, values, params = self.get_save_values(data)
-            if cols and columns != cols:
-                raise DatabaseError
-            cols = columns
+    def format_data(self, data):
+        vals = []
+        for torrent in self.filter_new(data):
+            columns, values, params = self.get_save_values(torrent)
             vals.append(tuple(values))
-        if vals: self.save_many_to_db(cols, vals, params, "data")
-        return
+        if not vals: return
+        return self.save_many_to_db(columns, vals, params, "data")
 
-    def filter_new(self, client, data):
-        timestamp = datetime.isoformat(datetime.now())
+    def filter_new(self, data):
         for torrent in data:
-            torrent["client"] = client
-            torrent["timestamp"] = timestamp
             if self.torrent_exists("static", "hash", torrent["hash"]):
-                yield torrent
+                yield self.filter_data_fields(torrent)
             else:
                 self.create_new_torrent(torrent)
 
     def get_save_values(self,torrent):
         column,values,params = [],[],[]
         for k,v in torrent.items():
-            column.append(k)
-            values.append(v)
-            params.append("?")
+                column.append(k)
+                values.append(v)
+                params.append("?")
         return ", ".join(column), values, ", ".join(params)
 
     def create_new_torrent(self, torrent):
@@ -142,22 +130,19 @@ class SqlStorage(BaseStorage, QueryMixin):
         return
 
 
-
-
-class DbCreatorScript(SqlStorage):
+class CreatorScript(SqlStorage):
     def __init__(self,path,clients,*args,**kwargs):
         super().__init__(path,clients,*args,**kwargs)
-        self.timestamp = datetime.isoformat(datetime.now())
         self.path = path
         self.clients = clients
         self.datatypes = Conv.datatypes
         self.first_run_script()
 
     def first_run_script(self):
-        conn = sqlite3.connect(self.path)
+        self.conn = sqlite3.connect(self.path)
         stIn = [f'{i} {self.datatypes[i]["type"]}' for i in self.static_fields]
         dtIn = [f'{i} {self.datatypes[i]["type"]}' for i in self.data_fields]
         self.create_db_table(", ".join(stIn), "static")
         self.create_db_table(", ".join(dtIn), "data")
-        self.create_db_table("timestamp","logtime")
-        return
+        self.create_db_table("timestamp TEXT","stamps")
+        return True

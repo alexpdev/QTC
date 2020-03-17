@@ -25,6 +25,8 @@ class ListWidget(QListWidget):
         super().__init__(parent=parent)
         self.row_count = 0
         self.setSpacing(2)
+        self.font = FancyFont()
+        self.setFont(self.font)
 
     def appendItem(self,item):
         self.addItem(item)
@@ -47,8 +49,6 @@ class TorrentNames(ListWidget):
 
     def assign(self,session,static,table,painters):
         self.session = session
-        self.fg_brush = painters[0]
-        self.bg_brush = painters[1]
         self.static = static
         self.table = table
         self.itemSelectionChanged.connect(self.display_info)
@@ -74,8 +74,6 @@ class TorrentNames(ListWidget):
         for x,row in enumerate(db_rows):
             for y,value in enumerate(row):
                 item = QTableWidgetItem(str(value[1]))
-                item.setForeground(self.fg_brush)
-                item.setBackground(self.bg_brush)
                 item.setFont(self.sansfont)
                 item.setFlags(flags)
                 self.table.setItem(x,y,item)
@@ -86,8 +84,6 @@ class TorrentNames(ListWidget):
         for key,value in itertools.chain.from_iterable(values):
             txt = f"{key}  |  {value}"
             item = ListItem(txt)
-            item.setForeground(self.fg_brush)
-            item.setBackground(self.bg_brush)
             item.setFont(self.sansfont)
             self.static.appendItem(item)
         return
@@ -100,8 +96,6 @@ class StaticButton(QPushButton):
 
     def assign(self,combo,painters,session,torrentNames):
         self.combo = combo
-        self.fg_brush = painters[0]
-        self.bg_brush = painters[1]
         self.session = session
         self.fancyfont = FancyFont()
         self.torrentNames = torrentNames
@@ -113,8 +107,6 @@ class StaticButton(QPushButton):
         for item in self.session.get_torrent_names(session_name):
             name,torrent_hash,client = item
             item = ListItem.create(*item)
-            item.setForeground(self.fg_brush)
-            item.setBackground(self.bg_brush)
             item.setFont(self.fancyfont)
             self.torrentNames.addItem(item)
         return
@@ -134,13 +126,13 @@ class CustomFont(QFont):
 
 
 class FancyFont(CustomFont):
-    info = {"name":"Leelawadee","size":11,"bold":False}
+    info = {"name":"Leelawadee","size":12,"bold":False}
     def __init__(self):
         super().__init__()
 
 
 class SansFont(CustomFont):
-    info = {"name":"Dubai Medium","size":11,"bold":True}
+    info = {"name":"Dubai Medium","size":9,"bold":True}
     def __init__(self):
         super().__init__()
 

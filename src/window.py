@@ -11,7 +11,8 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
                              QLabel, QListView, QListWidget, QListWidgetItem,
                              QMainWindow, QMenu, QMenuBar, QOpenGLWidget,
                              QPushButton, QStatusBar, QTableWidget,
-                             QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget)
+                             QGraphicsWidget, QTableWidgetItem, QTabWidget,
+                             QVBoxLayout, QWidget)
 
 from src.widgets import (ComboBox, FancyFont, ListItem,
                          TorrentNames, ListWidget, SansFont, StaticButton)
@@ -40,6 +41,8 @@ class Win(QMainWindow):
         # Central Widget and Layout
         self.gridLayoutWidget = QWidget()
         self.gridLayoutWidget.setObjectName(u"gridLayoutWidget")
+        self.gridLayoutWidget.setStyleSheet(
+        "background-color : #011F4D; color : #CAF5C7;")
         self.gridLayout = QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(5, 5, 5, 5)
@@ -59,10 +62,10 @@ class Win(QMainWindow):
         self.btn1 = StaticButton("Select",self.gridLayoutWidget)
         self.btn1.setObjectName(u"staticButton")
 
-        self.gridLayout.addWidget(self.torrentNames, 0, 0, 1, 1)
-        self.gridLayout.addWidget(self.static, 0, 1, 3, 1)
-        self.gridLayout.addWidget(self.combo, 1, 0, 1, 1)
-        self.gridLayout.addWidget(self.btn1, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.torrentNames, 2, 0, -1, 1)
+        self.gridLayout.addWidget(self.static, 0, 1, 4, -1)
+        self.gridLayout.addWidget(self.combo, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.btn1, 1, 0, 1, 1)
 
         self.tabWidget = QTabWidget()
         self.tabWidget.setObjectName(u"tabWidget")
@@ -72,8 +75,8 @@ class Win(QMainWindow):
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setSpacing(2)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(2, 2, 2, 2)
-        self.gridLayout.addLayout(self.verticalLayout,4,0,-1,-1)
+        self.verticalLayout.setContentsMargins(5, 5, 5, 5)
+        self.gridLayout.addLayout(self.verticalLayout,5,1,-1,-1)
 
         # self.tab.setLayout(self.verticalLayout)
         self.table_data = QTableWidget(self.tab)
@@ -88,10 +91,10 @@ class Win(QMainWindow):
         self.tab_2 = QWidget()
         self.tab_2.setObjectName(u"tab_2")
         self.tabWidget.addTab(self.tab_2, "Graphs")
-        self.gridLayout.setRowStretch(0, 2)
-        self.gridLayout.setRowStretch(1, 3)
-        self.gridLayout.setRowStretch(4, 4)
-        self.gridLayout.setColumnStretch(0, 2)
+        self.gridLayout.setRowStretch(2, 2)
+        self.gridLayout.setRowStretch(1, 2)
+        self.gridLayout.setRowStretch(5, 4)
+        self.gridLayout.setColumnStretch(0, 1)
         self.gridLayout.setColumnStretch(1, 4)
         self.setCentralWidget(self.gridLayoutWidget)
 

@@ -51,24 +51,23 @@ class QueryMixin:
         return self.conn
 
     def get_cursor(self):
-        conn = sql.connect(self.path)
-        conn.row_factory = sql.Row
-        cur = conn.cursor()
-        return cur
+        self.get_connection()
+        self.conn.row_factory = sql.Row
+        self.cur = self.conn.cursor()
+        return self.cur
 
     def torrent_exists(self,table,field,value):
         row = self.select_where(table,field,value)
-        try:
-            r = next(row)
-            return True
-        except StopIteration:
-            return False
+        if row: return True
+        return False
 
     def log_timestamp(self,stamp):
-        cur = self.conn.cursor()
-        statement = f"INSERT INTO logtime VALUES (?)"
-        cur.execute(statement,tuple(stamp))
+        cur =  self.conn.cursor()
+        statement = f"INSERT INTO stamps VALUES (?)"
+        cur.execute(statement,(stamp,))
+        self.conn.commit()
         cur.close()
+        return
 
     def save_to_db(self,torrent,table_name):
         cur = self.conn.cursor()
@@ -87,17 +86,20 @@ class QueryMixin:
         cur.close()
         return
 
-    def select_rows(self,table,*args):
-        cur = self.get_cursor()
-        args = "*" if not args else args
-        statement = f"SELECT {args} FROM {table}"
-        rows = cur.execute(statement)
+    def select_rows(self,table):
+        self.cur = self.get_cursor()
+        statement = f"SELECT * FROM {table}"
+        r = self.cur.execute(statement)
+        rows = r.fetchall()
+        self.cur.close()
         return rows
 
     def select_where(self,table,field,value):
-        cur = self.get_cursor()
+        self.cur = self.get_cursor()
         stmnt = f"SELECT * FROM {table} WHERE {field} == ?"
-        rows = cur.execute(stmnt,(value,))
+        r = self.cur.execute(stmnt,(value,))
+        rows = r.fetchall()
+        self.cur.close()
         return rows
 
     def create_db_table(self,headers,table_name):
