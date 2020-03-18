@@ -1,3 +1,35 @@
+#!/usr/bin/python
+#! -*- coding: utf-8 -*-
+
+################################################################################
+######
+###
+## Qbt Companion v0.1
+##
+## This code written for the "Qbt Companion" program
+##
+## This project is licensed with:
+## GNU AFFERO GENERAL PUBLIC LICENSE
+##
+## Please refer to the LICENSE file locate in the root directory of this
+## project or visit <https://www.gnu.org/licenses/agpl-3.0 for more
+## information.
+##
+## THE COPYRIGHT HOLDERS PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY
+## KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+## THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH
+## YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+## NECESSARY SERVICING, REPAIR OR CORRECTION.
+##
+## IN NO EVENT ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR
+## CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
+## INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
+## OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
+### PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+######
+################################################################################
+
 from datetime import datetime, timedelta
 
 class Converter:
@@ -115,7 +147,7 @@ class Converter:
             "type": "INTEGER",
             "label": "Timestamp",
             "table": "data",
-            "conv" : 4,
+            "conv" : 8,
         },
         "num_seeds": {
             "type": "INTEGER",
@@ -163,13 +195,13 @@ class Converter:
             "type": "INTEGER",
             "label": "Seen Complete",
             "table": "data",
-            "conv" : 5,
+            "conv" : 1,
         },
         "time_active": {
             "type": "INTEGER",
             "label": "Time Active",
             "table": "data",
-            "conv" : 1,
+            "conv" : 7,
         },
         "ratio": {
             "type": "REAL",
@@ -178,24 +210,6 @@ class Converter:
             "conv" : 6,
         },
     }
-
-    @classmethod
-    def table_details(cls,data):
-        data_types, static_types = [], []
-        hash_type = "hash " + cls.datatypes["hash"]["type"]
-        client_type = "client " + cls.datatypes["client"]["type"]
-        for t in [hash_type, client_type]:
-            static_types.append(t)
-            data_types.append(t)
-        for k, v in data.items():
-            if k in ["hash", "client"] or k not in cls.datatypes:
-                continue
-            value = k + " " + cls.datatypes[k]["type"]
-            if cls.datatypes[k]["table"] == "static":
-                static_types.append(value)
-            elif cls.datatypes[k]["table"] == "data":
-                data_types.append(value)
-        return data_types, static_types
 
     @classmethod
     def convert_values(cls,rows):
@@ -213,18 +227,18 @@ class Converter:
 
     @classmethod
     def convert(cls,num,val):
-        converter_lst = [
-            lambda x: cls.convert_duration(x),
-            lambda x: cls.convert_bytes(x) ,
-            lambda x: cls.convert_bps(x) ,
-            lambda x: cls.convert_const(x) ,
-            lambda x: cls.convert_time(x) ,
-            lambda x: cls.convert_ratio(x)
-        ]
-        result = converter_lst[num - 1](val)
+        converters = {
+            1 : cls.convert_duration,
+            2 : cls.convert_bytes,
+            3 : cls.convert_bps,
+            4 : cls.convert_const,
+            5 : cls.convert_time,
+            6 : cls.convert_ratio,
+            7 : cls.convert_delta,
+            8 : cls.convert_isotime
+            }
+        result = converters[num](val)
         return result
-
-
 
     # converter 1
     @classmethod
@@ -257,16 +271,24 @@ class Converter:
     # converter 4
     @classmethod
     def convert_const(cls,data):
-        return data
+        return str(data)
 
     # converter 5
     @classmethod
     def convert_time(cls,data):
-        return datetime.fromtimestamp(data)
+        return str(datetime.fromtimestamp(data))
 
     # converter 6
     @classmethod
     def convert_ratio(cls,data):
-        return round(data,3)
+        return str(round(data,5))
 
+    # converter 7
+    @classmethod
+    def convert_delta(cls,data):
+        d = timedelta(seconds=data)
+        return str(d)
 
+    @classmethod
+    def convert_isotime(cls,data):
+        return str(datetime.fromisoformat(data))

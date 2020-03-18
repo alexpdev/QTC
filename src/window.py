@@ -1,3 +1,35 @@
+#!/usr/bin/python
+#! -*- coding: utf-8 -*-
+
+################################################################################
+######
+###
+## Qbt Companion v0.1
+##
+## This code written for the "Qbt Companion" program
+##
+## This project is licensed with:
+## GNU AFFERO GENERAL PUBLIC LICENSE
+##
+## Please refer to the LICENSE file locate in the root directory of this
+## project or visit <https://www.gnu.org/licenses/agpl-3.0 for more
+## information.
+##
+## THE COPYRIGHT HOLDERS PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY
+## KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+## THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH
+## YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+## NECESSARY SERVICING, REPAIR OR CORRECTION.
+##
+## IN NO EVENT ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR
+## CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
+## INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
+## OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
+### PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+######
+################################################################################
+
 import sys
 
 from PyQt5.QtCore import (QCoreApplication, QMetaObject,
@@ -26,23 +58,15 @@ class Win(QMainWindow):
         self.setup_ui()
 
 
-    def load_styling_tools(self):
-        self.fancyfont = FancyFont()
-        self.sansfont = SansFont()
-        self.fg_brush = QBrush(QColor(90,223,255, 255))
-        self.bg_brush = QBrush(QColor(7,14,3, 255))
-        self.painters = [self.fg_brush,self.bg_brush]
-
     def setup_ui(self):
         self.setWindowTitle("Torrent Companion")
         self.resize(1400, 800)
-        self.load_styling_tools()
 
         # Central Widget and Layout
         self.gridLayoutWidget = QWidget()
         self.gridLayoutWidget.setObjectName(u"gridLayoutWidget")
         self.gridLayoutWidget.setStyleSheet(
-        "background-color : #011F4D; color : #CAF5C7;")
+        "background-color : #E0E0E0; color : #000;")
         self.gridLayout = QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(5, 5, 5, 5)
@@ -50,10 +74,8 @@ class Win(QMainWindow):
         # List Widgets
         self.static = ListWidget(parent=self.gridLayoutWidget)
         self.static.setObjectName(u"static_torrent_data")
-        self.static.setFont(self.sansfont)
         self.torrentNames = TorrentNames(parent=self.gridLayoutWidget)
         self.torrentNames.setObjectName(u"Names")
-        self.torrentNames.setFont(self.sansfont)
 
         # Combo Box
         self.combo = ComboBox(self.gridLayoutWidget)
@@ -117,20 +139,10 @@ class Win(QMainWindow):
 
     def destroy_something(self):
         self.destroy()
-        sys.exit(app.exec_())
+        sys.exit(self.exec_())
 
     def assign_session(self,session):
         self.session = session
-        self.combo.assign(self.session,self.painters)
-        self.btn1.assign(self.combo,self.painters,
-                        self.session,self.torrentNames)
-        self.torrentNames.assign(self.session,self.static,
-                                self.table_data,self.painters)
-
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    win = Win()
-    win.show()
-    sys.exit(app.exec_())
+        self.combo.assign(self.session)
+        self.btn1.assign(self.combo,self.session,self.torrentNames)
+        self.torrentNames.assign(self.session,self.static,self.table_data)

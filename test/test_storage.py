@@ -1,3 +1,35 @@
+#!/usr/bin/python
+#! -*- coding: utf-8 -*-
+
+################################################################################
+######
+###
+## Qbt Companion v0.1
+##
+## This code written for the "Qbt Companion" program
+##
+## This project is licensed with:
+## GNU AFFERO GENERAL PUBLIC LICENSE
+##
+## Please refer to the LICENSE file locate in the root directory of this
+## project or visit <https://www.gnu.org/licenses/agpl-3.0 for more
+## information.
+##
+## THE COPYRIGHT HOLDERS PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY
+## KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+## THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH
+## YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+## NECESSARY SERVICING, REPAIR OR CORRECTION.
+##
+## IN NO EVENT ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR
+## CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
+## INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
+## OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
+### PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+######
+################################################################################
+
 import json
 import os
 import sys
@@ -32,6 +64,7 @@ class TestStorage(TestCase):
     def setUp(self):
         self.path = DATA_DIR / DB_NAME
         self.clients = DETAILS
+        self.storage = SqlStorage(self.path,self.clients)
 
     def tearDown(self):
         db = self.path
@@ -49,25 +82,23 @@ class TestStorage(TestCase):
             self.assertEqual(storage.clients,self.clients)
 
     def test_sql_methods(self):
-        sql_storage = SqlStorage(self.path,self.clients)
-        clients = (i for i in self.clients)
-        client = next(clients)
-        data = sql_storage.make_client_requests(client)
-        self.assertTrue(data)
-        self.assertIsInstance(data,list)
-        torrent = data[0]
-        torrent["client"] = client
-        torrent["timestamp"] = "timestamp"
-        self.assertIsInstance(torrent,dict)
-        for i in sql_storage.static_fields:
-            self.assertIn(i,torrent)
-        for i in sql_storage.data_fields:
-            self.assertIn(i,torrent)
+        for client in self.clients:
+            data = self.storage.make_client_requests(client)
+            self.assertTrue(data)
+            self.assertIsInstance(data,list)
+            torrent = data[0]
+            torrent["client"] = client
+            torrent["timestamp"] = "timestamp"
+            self.assertIsInstance(torrent,dict)
+            for i in self.storage.static_fields:
+                self.assertIn(i,torrent)
+            for i in self.storage.data_fields:
+                self.assertIn(i,torrent)
 
     def test_success(self):
-        storage = SqlStorage(self.path,self.clients)
-        storage.log()
+        self.assertTrue(self.storage.log())
         self.assertTrue(os.path.isfile(self.path))
-        storage.log()
-        for row in storage.select_rows("static"):
+        self.assertFalse(self.storage.log())
+        for row in self.storage.select_rows("static"):
             self.assertTrue(len(row) > 5)
+

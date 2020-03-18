@@ -1,23 +1,44 @@
+#!/usr/bin/python
+#! -*- coding: utf-8 -*-
+
+################################################################################
+######
+###
+## Qbt Companion v0.1
+##
+## This code written for the "Qbt Companion" program
+##
+## This project is licensed with:
+## GNU AFFERO GENERAL PUBLIC LICENSE
+##
+## Please refer to the LICENSE file locate in the root directory of this
+## project or visit <https://www.gnu.org/licenses/agpl-3.0 for more
+## information.
+##
+## THE COPYRIGHT HOLDERS PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY
+## KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+## THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH
+## YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+## NECESSARY SERVICING, REPAIR OR CORRECTION.
+##
+## IN NO EVENT ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR
+## CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
+## INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
+## OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
+### PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+######
+################################################################################
+
 import os
 from datetime import datetime
-import sqlite3
 
 from src.mixins import QueryMixin, RequestMixin
 from src.serialize import Converter as Conv
 
 
-
-class DatabaseError(Exception):
-    pass
-
-class DatabasePathError(DatabaseError):
-    pass
-
-class LessThanAnHour(DatabaseError):
-    pass
-
 class BaseStorage(RequestMixin):
-    def __init__(self,path,clients,*args,**kwargs):
+    def __init__(self,path=None,clients=None,*args,**kwargs):
         self.path = path
 
         self.clients = clients
@@ -60,18 +81,17 @@ class BaseStorage(RequestMixin):
 
 
 class SqlStorage(BaseStorage, QueryMixin):
-    def __init__(self, path, clients, *args, **kwargs):
-        super().__init__(path, clients)
+    def __init__(self, path=None, clients=None, *args, **kwargs):
+        super().__init__(path=path, clients=clients)
         self.path = path
         self.clients = clients
-        self.conn = None
 
     def log(self):
         if not self.check_path():
             CreatorScript(self.path,self.clients)
-            self.get_connection()
         if not self.check_timelog():
-            return "Not Now"
+            print("not enough time between logs")
+            return False
         data = []
         for client in self.clients:
             response = self.make_client_requests(client)
@@ -80,22 +100,21 @@ class SqlStorage(BaseStorage, QueryMixin):
                 item["client"] = client
                 data.append(item)
         self.format_data(data)
+        return True
 
     def check_timelog(self):
         timestamp = datetime.now()
         self.timestamp = datetime.isoformat(timestamp)
         rows = self.select_rows("stamps")
         for item in rows:
-            print(tuple(item),item["timestamp"])
             row_stamp = datetime.fromisoformat(item["timestamp"])
-            if (timestamp - row_stamp).seconds < 86400:
+            if (timestamp - row_stamp).seconds < 720:
                 return False
-        self.log_timestamp(str(self.timestamp))
+        self.log_timestamp(self.timestamp)
         return True
 
     def check_path(self):
         if os.path.isfile(self.path):
-            self.get_connection()
             return True
         return False
 
@@ -129,17 +148,15 @@ class SqlStorage(BaseStorage, QueryMixin):
         self.save_to_db(dataFields, "data")
         return
 
-
 class CreatorScript(SqlStorage):
-    def __init__(self,path,clients,*args,**kwargs):
-        super().__init__(path,clients,*args,**kwargs)
+    def __init__(self,path=None,clients=None,*args,**kwargs):
+        super().__init__(path=path,clients=clients,*args,**kwargs)
         self.path = path
         self.clients = clients
         self.datatypes = Conv.datatypes
         self.first_run_script()
 
     def first_run_script(self):
-        self.conn = sqlite3.connect(self.path)
         stIn = [f'{i} {self.datatypes[i]["type"]}' for i in self.static_fields]
         dtIn = [f'{i} {self.datatypes[i]["type"]}' for i in self.data_fields]
         self.create_db_table(", ".join(stIn), "static")
