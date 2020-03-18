@@ -79,63 +79,64 @@ class RequestMixin:
 
 class QueryMixin:
 
-    def db_disconnect(self):
-        self.conn.commit()
-        self.curs.close()
-        self.conn.close()
-
-    def db_connect(self):
-        self.conn = sqlite3.connect(self.path)
-        self.conn.row_factory = sqlite3.Row
-        self.curs = self.conn.cursor()
-        return self.curs
-
     def torrent_exists(self,table,field,value):
         row = self.select_where(table,field,value)
         if row: return True
         return False
 
     def log_timestamp(self,stamp):
-        cur = self.db_connect()
-        statement = f"INSERT INTO stamps VALUES (?)"
-        cur.execute(statement,(stamp,))
-        self.db_disconnect()
+        with SqlConnect(self.path) as cur:
+            statement = f"INSERT INTO stamps VALUES (?)"
+            cur.execute(statement,(stamp,))
         return
 
-    def save_to_db(self,torrent,table_name):
-        cur = self.db_connect()
-        columns, values, params = self.get_save_values(torrent)
-        stat = f"INSERT INTO {table_name} ({columns}) VALUES ({params})"
-        cur.execute(stat,tuple(values))
-        self.db_disconnect()
+    def save_to_db(self,data,table_name):
+        with SqlConnect(self.path) as cur:
+            columns, values, params = self.get_save_values(data)
+            stat = f"INSERT INTO {table_name} ({columns}) VALUES ({params})"
+            cur.execute(stat,tuple(values))
         return
 
     def save_many_to_db(self,columns,commit_values,params,table_name):
-        cur = self.db_connect()
-        statement = f"INSERT INTO {table_name} ({columns}) VALUES ({params})"
-        cur.executemany(statement,commit_values)
-        self.db_disconnect()
+        with SqlConnect(self.path) as cur:
+            cmd = f"INSERT INTO {table_name} ({columns}) VALUES ({params})"
+            cur.executemany(cmd,commit_values)
         return
 
     def select_rows(self,table):
-        cur = self.db_connect()
-        statement = f"SELECT * FROM {table}"
-        r = cur.execute(statement)
-        rows = r.fetchall()
-        self.db_disconnect()
+        with SqlConnect(self.path) as cur:
+            statement = f"SELECT * FROM {table}"
+            r = cur.execute(statement)
+            rows = r.fetchall()
         return rows
 
     def select_where(self,table,field,value):
-        cur = self.db_connect()
-        stmnt = f"SELECT * FROM {table} WHERE {field} == ?"
-        r = cur.execute(stmnt,(value,))
-        rows = r.fetchall()
-        self.db_disconnect()
+        with SqlConnect(self.path) as cur:
+            stmnt = f"SELECT * FROM {table} WHERE {field} == ?"
+            r = cur.execute(stmnt,(value,))
+            rows = r.fetchall()
         return rows
 
     def create_db_table(self,headers,table_name):
-        cur = self.db_connect()
-        statement = f"CREATE TABLE {table_name} ({headers})"
-        cur.execute(statement)
-        self.db_disconnect()
+        with SqlConnect(self.path) as cur:
+            statement = f"CREATE TABLE {table_name} ({headers})"
+            cur.execute(statement)
         return
+
+
+class SqlConnect:
+    """ Context Manager Class for connection and cursor to the database """
+
+    def __init__(self,path):
+        self.path = path
+
+    def __enter__(self):
+        self.conn = sqlite3.connect(self.path)
+        self.conn.row_factory = sqlite3.Row
+        self.curs = self.conn.cursor()
+        return self.curs
+
+    def __exit__(self,*args):
+        self.conn.commit()
+        self.curs.close()
+        self.conn.close()

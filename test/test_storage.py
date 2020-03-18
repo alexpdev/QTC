@@ -34,6 +34,7 @@ import json
 import os
 import sys
 from pathlib import Path
+import sqlite3
 from unittest import TestCase
 
 from dotenv import load_dotenv
@@ -101,4 +102,22 @@ class TestStorage(TestCase):
         self.assertFalse(self.storage.log())
         for row in self.storage.select_rows("static"):
             self.assertTrue(len(row) > 5)
+
+    def test_create_database_table(self):
+        db_name = "names"
+        db_headers = ("name TEXT, address TEXT, number INTEGER, age REAL")
+        self.storage.create_db_table(db_headers,db_name)
+        con = sqlite3.connect(self.path)
+        c = con.execute("SELECT * from names")
+        self.assertEqual(c.fetchone(),None)
+        data = {"name":"dursley","address":"Privet Drive","number":4,"age":44.5}
+        self.storage.save_to_db(data,db_name)
+        con = sqlite3.connect(self.path)
+        c = con.execute("SELECT * from names")
+        for row in c:
+            for i in tuple(row):
+                self.assertIn(i,data.values())
+        con.close()
+
+
 
