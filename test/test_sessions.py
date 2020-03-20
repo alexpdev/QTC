@@ -46,18 +46,13 @@ class TestSession(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        pass
-
-    @classmethod
-    def tearDownClass(cls):
-        pass
+        db = DATA_DIR / DB_NAME
+        if os.path.isfile(db):
+            os.remove(db)
 
     def setUp(self):
         self.clients = DETAILS
         self.path = DATA_DIR / DB_NAME
-        db = self.path
-        if os.path.isfile(db):
-            os.remove(db)
 
     def tearDown(self):
         db = self.path

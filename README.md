@@ -9,10 +9,7 @@ Features ---
 * view the current stats in a similar manner that is already available to you directly in the client
 * view past statistics recorded at specific times for comparison
 
-**Example** : My current client allows me to see what my ratio is for a given torrent, but only at that moment.  With Qbt Companion I can see the statistics from a previous session so I can see the difference between the two with ease and gauge how well or poorly each is performing over time.
-
-
-
+- Still in the early stages of development
 - Qbt Companion is nowhere near being ready for End Users yet.
 
 See the LICENSE file and the README for more information on the subjects respectively.

@@ -30,17 +30,17 @@
 ######
 ################################################################################
 
-import json
 import os
 import sys
-from pathlib import Path
+import json
 import sqlite3
+from pathlib import Path
 from unittest import TestCase
 
 from dotenv import load_dotenv
 
-BASE_DIR = Path(os.path.abspath(__file__)).parent.parent
-sys.path.append(BASE_DIR)
+# BASE_DIR = Path(os.path.abspath(__file__)).parent.parent
+# sys.path.append(BASE_DIR)
 load_dotenv()
 
 from test.testsettings import DATA_DIR, DB_NAME, DETAILS
@@ -82,7 +82,7 @@ class TestStorage(TestCase):
             self.assertEqual(storage.path,self.path)
             self.assertEqual(storage.clients,self.clients)
 
-    def test_sql_methods(self):
+    def test_request_mixin(self):
         for client in self.clients:
             data = self.storage.make_client_requests(client)
             self.assertTrue(data)
@@ -96,7 +96,7 @@ class TestStorage(TestCase):
             for i in self.storage.data_fields:
                 self.assertIn(i,torrent)
 
-    def test_success(self):
+    def test_log_function(self):
         self.assertTrue(self.storage.log())
         self.assertTrue(os.path.isfile(self.path))
         self.assertFalse(self.storage.log())
@@ -118,6 +118,4 @@ class TestStorage(TestCase):
             for i in tuple(row):
                 self.assertIn(i,data.values())
         con.close()
-
-
 

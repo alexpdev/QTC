@@ -46,7 +46,7 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
                              QGraphicsWidget, QTableWidgetItem, QTabWidget,
                              QVBoxLayout, QWidget)
 
-from src.widgets import (ComboBox, FancyFont, ListItem,
+from src.widgets import (ComboBox, FancyFont, ListItem, TreeWidget,
                          TorrentNames, ListWidget, SansFont, StaticButton)
 
 
@@ -61,78 +61,112 @@ class Win(QMainWindow):
     def setup_ui(self):
         self.setWindowTitle("Torrent Companion")
         self.resize(1400, 800)
+        self.setStyleSheet("background : #555; color: #fff;")
 
         # Central Widget and Layout
         self.gridLayoutWidget = QWidget()
         self.gridLayoutWidget.setObjectName(u"gridLayoutWidget")
-        self.gridLayoutWidget.setStyleSheet(
-        "background-color : #E0E0E0; color : #000;")
-        self.gridLayout = QGridLayout(self.gridLayoutWidget)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.gridLayout.setContentsMargins(5, 5, 5, 5)
 
         # List Widgets
         self.static = ListWidget(parent=self.gridLayoutWidget)
         self.static.setObjectName(u"static_torrent_data")
-        self.torrentNames = TorrentNames(parent=self.gridLayoutWidget)
-        self.torrentNames.setObjectName(u"Names")
+
+        self.tree = TreeWidget(parent=self.gridLayoutWidget)
+        self.tree.setObjectName("Names")
+
+        self.horizontalLayout = QHBoxLayout(self.gridLayoutWidget)
+        self.horizontalLayout.setSpacing(2)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.horizontalLayout.setContentsMargins(5,5,5,5)
+        self.horizontalLayout.addWidget(self.tree)
+
+
+        # self.gridLayout = QGridLayout(self.gridLayoutWidget)
+        # self.gridLayout.setObjectName(u"gridLayout")
+        # self.gridLayout.setContentsMargins(10, 10, 10, 10)
+        # self.torrentNames = TorrentNames(parent=self.gridLayoutWidget)
+        # self.torrentNames.setObjectName(u"Names")
+        # self.torrentNames.setObjectName("Names")
 
         # Combo Box
-        self.combo = ComboBox(self.gridLayoutWidget)
-        self.combo.setObjectName(u"comboBox")
-        self.combo.setEditable(False)
-        self.btn1 = StaticButton("Select",self.gridLayoutWidget)
-        self.btn1.setObjectName(u"staticButton")
+        # self.combo = ComboBox(self.gridLayoutWidget)
+        # self.combo.setObjectName(u"comboBox")
+        # self.combo.setEditable(False)
+        # self.btn1 = StaticButton("Select",self.gridLayoutWidget)
+        # self.btn1.setObjectName(u"staticButton")
 
-        self.gridLayout.addWidget(self.torrentNames, 2, 0, -1, 1)
-        self.gridLayout.addWidget(self.static, 0, 1, 4, -1)
-        self.gridLayout.addWidget(self.combo, 0, 0, 1, 1)
-        self.gridLayout.addWidget(self.btn1, 1, 0, 1, 1)
+        # self.gridLayout.addWidget(self.torrentNames, 2, 0, -1, 1)
+        # self.gridLayout.addWidget(self.static, 0, 1, 4, -1)
+        # self.gridLayout.addWidget(self.combo, 0, 0, 1, 1)
+        # self.gridLayout.addWidget(self.btn1, 1, 0, 1, 1)
 
-        self.tabWidget = QTabWidget()
-        self.tabWidget.setObjectName(u"tabWidget")
-        self.tab = QWidget()
-        self.tab.setObjectName(u"tab")
+        # self.tabWidget = QTabWidget()
+        # self.tabWidget.setObjectName(u"tabWidget")
+        # self.tab = QWidget()
+        # self.tab.setObjectName(u"tab")
+
+        # self.verticalLayout2 = QVBoxLayout()
+        # self.verticalLayout2.setSpacing(2)
+        # self.verticalLayout2.setObjectName(u"verticalLayout2")
+        # self.verticalLayout2.setContentsMargins(5, 5, 5, 5)
+        # self.verticalLayout2.addWidget(self.static)
+
+        # self.gridLayout.addLayout(self.verticalLayout,5,1,-1,-1)
+        # self.tab.setLayout(self.verticalLayout)
+        # self.tabWidget.addTab(self.tab, "DataTable")
+
+        # self.tab_2 = QWidget()
+        # self.tab_2.setObjectName(u"tab_2")
+        # self.tabWidget.addTab(self.tab_2, "Graphs")
+        # self.verticalLayout2.addLayout(self.verticalLayout)
 
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setSpacing(2)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(5, 5, 5, 5)
-        self.gridLayout.addLayout(self.verticalLayout,5,1,-1,-1)
 
-        # self.tab.setLayout(self.verticalLayout)
-        self.table_data = QTableWidget(self.tab)
+        self.table_data = QTableWidget(self.gridLayoutWidget)
         self.table_data.setObjectName(u"tableWidget")
+        self.table_data.setStyleSheet( """color : #000; background : #e6e6e6;
+                                            border : 2px solid #000;""")
         self.table_data.setFrameShape(QFrame.WinPanel)
         self.table_data.setFrameShadow(QFrame.Sunken)
-        self.table_data.setLineWidth(12)
-        self.table_data.setMidLineWidth(12)
+        self.verticalLayout.addWidget(self.static)
         self.verticalLayout.addWidget(self.table_data)
-        self.tabWidget.addTab(self.tab, "DataTable")
+        self.horizontalLayout.addLayout(self.verticalLayout)
+        self.horizontalLayout.setStretch(1,5)
 
-        self.tab_2 = QWidget()
-        self.tab_2.setObjectName(u"tab_2")
-        self.tabWidget.addTab(self.tab_2, "Graphs")
-        self.gridLayout.setRowStretch(2, 2)
-        self.gridLayout.setRowStretch(1, 2)
-        self.gridLayout.setRowStretch(5, 4)
-        self.gridLayout.setColumnStretch(0, 1)
-        self.gridLayout.setColumnStretch(1, 4)
+        # self.gridLayout.setRowStretch(2, 2)
+        # self.gridLayout.setRowStretch(1, 2)
+        # self.gridLayout.setRowStretch(5, 4)
+        # self.gridLayout.setColumnStretch(0, 1)
+        # self.gridLayout.setColumnStretch(1, 4)
+
         self.setCentralWidget(self.gridLayoutWidget)
 
         menubar = self.menuBar()
+        menufont = menubar.font()
+        menufont.setPointSize(11)
+        menubar.setFont(menufont)
         menubar.setObjectName(u"menubar")
+        menubar.setStyleSheet("""background: #000; color: #0cc;
+                              border-bottom: 1px solid #0ff;""")
         statusbar = self.statusBar()
         statusbar.setObjectName(u"statusbar")
+        statusbar.setStyleSheet("""background: #000; color: #0ff;
+                                border-bottom: 1px solid #0ff;""")
         self.file_menu = QMenu("File",parent=menubar)
+        self.layout_menu = QMenu("Layout",parent=menubar)
         self.help_menu = QMenu("Help",parent=menubar)
+
         self.file_menu.addAction("Print",self.print_something)
         self.help_menu.addAction("Quit",self.destroy_something)
 
         menubar.addMenu(self.file_menu)
         menubar.addMenu(self.help_menu)
-        self.tabWidget.setCurrentIndex(0)
+        # self.tabWidget.setCurrentIndex(0)
         QMetaObject.connectSlotsByName(self)
+
 
     def print_something(self):
         print("I have been clicked")
@@ -143,6 +177,7 @@ class Win(QMainWindow):
 
     def assign_session(self,session):
         self.session = session
-        self.combo.assign(self.session)
-        self.btn1.assign(self.combo,self.session,self.torrentNames)
-        self.torrentNames.assign(self.session,self.static,self.table_data)
+        # self.combo.assign(self.session)
+        # self.btn1.assign(self.combo,self.session,self.torrentNames)
+        # self.torrentNames.assign(self.session,self.static,self.table_data)
+        self.tree.assign(self.session,self.static,self.table_data)

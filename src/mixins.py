@@ -31,25 +31,16 @@
 ################################################################################
 
 
-import json
 import os
-import pickle
-import sqlite3
 import sys
+import json
+import sqlite3
 from datetime import datetime
 
 import requests
 
 
 class RequestError(Exception):
-    pass
-
-
-class DbAlreadyConnected(Exception):
-    pass
-
-
-class NoDatabaseConnected(Exception):
     pass
 
 
@@ -67,8 +58,6 @@ class RequestMixin:
             raise RequestError
 
     def get_info(self,resp,url=None):
-        if not url:
-            url = self.url
         url += "torrents/info"
         cookies = resp.cookies
         response = requests.get(url, cookies=cookies)
@@ -76,12 +65,46 @@ class RequestMixin:
         data = response.json()
         return data
 
+    def get_properties(self,url,cookies,torrent_hash):
+        url += "torrents/properties"
+        params = {"hash" : torrent_hash}
+        resp = requests.get(url,cookies=cookies,params=params)
+        self.check_response(resp)
+        data = resp.json()
+        return data
+
+    def get_trackers(self,url,cookies,torrent_hash):
+        url += "torrents/trackers"
+        params = {"hash" : torrent_hash}
+        resp = requests.get(url,cookies=cookies,params=params)
+        self.check_response(resp)
+        data = resp.json()
+        return data
+
+    def get_sync(self,url,cookies,rid=0):
+        url += "sync/maindata?rid=" + str(rid)
+        resp = requests.get(url,cookies=cookies)
+        self.check_response(resp)
+        data = resp.json()
+        return data
+
+    def get_log(self,url,cookies,flags=[]):
+        url += "log/main"
+        flag_dict = ["normal","info","warning","critical"]
+        if not flags:
+            flags = flag_dict
+        params = dict([(i,"true") for i in flags])
+        resp = requests.get(url,cookies=cookies,params=params)
+        self.check_response(resp)
+        data = resp.json()
+        return data
+
 
 class QueryMixin:
 
     def torrent_exists(self,table,field,value):
-        row = self.select_where(table,field,value)
-        if row: return True
+        rows = self.select_where(table,field,value)
+        if rows: return rows
         return False
 
     def log_timestamp(self,stamp):
@@ -117,10 +140,30 @@ class QueryMixin:
             rows = r.fetchall()
         return rows
 
+    def select_fields(self,table,fields,condition,value):
+        with SqlConnect(self.path) as cur:
+            query = f"SELECT {fields} FROM {table} WHERE {condition} == ?"
+            r = cur.execute(query,(value,))
+            rows = r.fetchall()
+        return rows
+
     def create_db_table(self,headers,table_name):
         with SqlConnect(self.path) as cur:
             statement = f"CREATE TABLE {table_name} ({headers})"
             cur.execute(statement)
+        return
+
+    def update_table(self,table,column,value,hashe):
+        with SqlConnect(self.path) as cur:
+            statement = f"UPDATE {table} SET {column} = ? WHERE hash == ?"
+            cur.execute(statement,(value,hashe))
+        return
+
+
+    def delete_row(self,table_name,field,value):
+        with SqlConnect(self.path) as cur:
+            statement = f"DELETE FROM {table_name} WHERE {field} = ?"
+            cur.execute(statement,(value,))
         return
 
 

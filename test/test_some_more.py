@@ -30,42 +30,40 @@
 ######
 ################################################################################
 
-import sys
 import os
+import sys
+import json
+import sqlite3
 from pathlib import Path
+from unittest import TestCase
+
 from dotenv import load_dotenv
-from threading import Thread
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR); load_dotenv()
-BASE_DIR = Path(BASE_DIR)
-try:
-    from src._settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
-except:
-    from src.settings import (DATA_DIR,
-                              DB_NAME,
-                              DETAILS,
-                              DEBUG)
+# BASE_DIR = Path(os.path.abspath(__file__)).parent.parent
+# sys.path.append(BASE_DIR)
+load_dotenv()
+
+from test.testsettings import DATA_DIR, DB_NAME, DETAILS
 
 
-from src.storage import SqlStorage
-from src.session import SqlSession
+from src.storage import BaseStorage, SqlStorage
 
-kwargs = {
-    "dbg" : False,
-    "backend" : "Sqlite3",
-}
 
-def main(**kwargs):
-    database_path = BASE_DIR / DATA_DIR / DB_NAME
-    clients = DETAILS
-    storage = SqlStorage(database_path,clients)
-    session = SqlSession(database_path,clients)
-    args = storage,session
-    log_thread = Thread(target=storage.log)
-    log_thread.start()
-    session.mainloop()
-    return
 
-if __name__ == "__main__":
-    main(**kwargs)
+class TestMore(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.path = DATA_DIR / DB_NAME
+        if os.path.isfile(path):
+            os.remove(path)
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.isfile(cls.path):
+            os.remove(cls.path)
+
+    def setUp(self):
+        self.path = DATA_DIR / DB_NAME
+        self.clients = DETAILS
+        self.storage = SqlStorage(self.path,self.clients)

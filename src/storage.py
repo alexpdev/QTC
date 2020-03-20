@@ -4,29 +4,29 @@
 ################################################################################
 ######
 ###
-## Qbt Companion v0.1
+# Qbt Companion v0.1
 ##
-## This code written for the "Qbt Companion" program
+# This code written for the "Qbt Companion" program
 ##
-## This project is licensed with:
-## GNU AFFERO GENERAL PUBLIC LICENSE
+# This project is licensed with:
+# GNU AFFERO GENERAL PUBLIC LICENSE
 ##
-## Please refer to the LICENSE file locate in the root directory of this
-## project or visit <https://www.gnu.org/licenses/agpl-3.0 for more
-## information.
+# Please refer to the LICENSE file locate in the root directory of this
+# project or visit <https://www.gnu.org/licenses/agpl-3.0 for more
+# information.
 ##
-## THE COPYRIGHT HOLDERS PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY
-## KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-## THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH
-## YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-## NECESSARY SERVICING, REPAIR OR CORRECTION.
+# THE COPYRIGHT HOLDERS PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY
+# KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+# THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH
+# YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+# NECESSARY SERVICING, REPAIR OR CORRECTION.
 ##
-## IN NO EVENT ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR
-## CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
-## INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
-## OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
-### PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+# IN NO EVENT ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR
+# CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
+# INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
+# OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
+# PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 ######
 ################################################################################
 
@@ -34,11 +34,9 @@ import os
 from datetime import datetime
 
 from src.mixins import QueryMixin, RequestMixin
-from src.serialize import Converter as Conv
-
 
 class BaseStorage(RequestMixin):
-    def __init__(self,path=None,clients=None,*args,**kwargs):
+    def __init__(self, path=None, clients=None, *args, **kwargs):
         self.path = path
 
         self.clients = clients
@@ -62,6 +60,7 @@ class BaseStorage(RequestMixin):
         url = client_details["url"]
         credentials = client_details["credentials"]
         resp = self.login(url=url, credentials=credentials)
+        cookies = resp.cookies
         data = self.get_info(resp, url=url)
         return data
 
@@ -88,7 +87,7 @@ class SqlStorage(BaseStorage, QueryMixin):
 
     def log(self):
         if not self.check_path():
-            CreatorScript(self.path,self.clients)
+            self.installation_script()
         if not self.check_timelog():
             print("not enough time between logs")
             return False
@@ -123,22 +122,23 @@ class SqlStorage(BaseStorage, QueryMixin):
         for torrent in self.filter_new(data):
             columns, values, params = self.get_save_values(torrent)
             vals.append(tuple(values))
-        if not vals: return
+        if not vals:
+            return
         return self.save_many_to_db(columns, vals, params, "data")
 
     def filter_new(self, data):
         for torrent in data:
-            if self.torrent_exists("static", "hash", torrent["hash"]):
-                yield self.filter_data_fields(torrent)
-            else:
-                self.create_new_torrent(torrent)
+            row = self.torrent_exists("static", "hash", torrent["hash"])
+            if not row: self.create_new_torrent(torrent)
+            else: yield self.filter_data_fields(torrent)
 
-    def get_save_values(self,torrent):
-        column,values,params = [],[],[]
-        for k,v in torrent.items():
-                column.append(k)
-                values.append(v)
-                params.append("?")
+
+    def get_save_values(self, torrent):
+        column, values, params = [], [], []
+        for k, v in torrent.items():
+            column.append(k)
+            values.append(v)
+            params.append("?")
         return ", ".join(column), values, ", ".join(params)
 
     def create_new_torrent(self, torrent):
@@ -148,18 +148,29 @@ class SqlStorage(BaseStorage, QueryMixin):
         self.save_to_db(dataFields, "data")
         return
 
-class CreatorScript(SqlStorage):
-    def __init__(self,path=None,clients=None,*args,**kwargs):
-        super().__init__(path=path,clients=clients,*args,**kwargs)
-        self.path = path
-        self.clients = clients
-        self.datatypes = Conv.datatypes
-        self.first_run_script()
+    def installation_script(self):
+        stypes = {
+            "TEXT": {"client", "tracker", "hash",
+                    "category", "magnet_uri", "name",
+                    "save_path", "state", "tags"},
+            "INTEGER": {"completion_on", "added_on","total_size"}}
+        dtypes = {
+            "TEXT": {"client", "hash", "timestamp"},
+            "REAL": {"ratio"},
+            "INTEGER": {"completed", "downloaded",
+                        "last_activity", "downloaded_session", "size",
+                        "num_complete", "uploaded", "uploaded_session",
+                        "upspeed", "num_incomplete", "num_leechs", "num_seeds",
+                        "dlspeed", "seen_complete", "time_active"}}
 
-    def first_run_script(self):
-        stIn = [f'{i} {self.datatypes[i]["type"]}' for i in self.static_fields]
-        dtIn = [f'{i} {self.datatypes[i]["type"]}' for i in self.data_fields]
-        self.create_db_table(", ".join(stIn), "static")
-        self.create_db_table(", ".join(dtIn), "data")
-        self.create_db_table("timestamp TEXT","stamps")
+        def loop_types(typ,lst):
+            for k,v in typ.items():
+                lst += [i + " " + k for i in v]
+            return lst
+
+        slst = loop_types(stypes,[])
+        self.create_db_table(", ".join(slst), "static")
+        dlst = loop_types(dtypes,[])
+        self.create_db_table(", ".join(dlst), "data")
+        self.create_db_table("timestamp TEXT", "stamps")
         return True
