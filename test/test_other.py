@@ -35,8 +35,6 @@ import sys
 import json
 from pathlib import Path
 from PyQt5.QtWidgets import QApplication
-# BASE_DIR = Path(os.path.abspath(__file__)).parent.parent
-# sys.path.append(BASE_DIR)
 from unittest import TestCase
 from dotenv import load_dotenv
 load_dotenv()
@@ -81,4 +79,29 @@ class TestOthers(TestCase):
                 for row in rows:
                     with self.subTest(i=t_hash):
                         self.assertIn(("Hash",t_hash),row)
+
+    def test_db_data_changes(self):
+        storage = SqlStorage(self.path,self.clients)
+        storage.log()
+        hashes = set()
+        for client in self.clients:
+            data = storage.make_client_requests(client)
+            for torrent in data:
+                hashes.add(torrent["hash"])
+                torrent["tags"] = "Books"
+                self.assertEqual(torrent["tags"], "Books")
+                torrent["category"] = "software"
+                torrent["client"] = client
+                self.assertEqual(torrent["category"], "software")
+                torrent["state"] = "uploadingAllDayLong"
+            with self.subTest("filter_new"):
+                self.assertFalse(list(storage.filter_new(data)))
+        for row in storage.select_rows("static"):
+            if row["hash"] in hashes:
+                self.assertEqual(row["category"], "software")
+                self.assertEqual(row["tags"],"Books")
+                self.assertEqual(row["state"],"uploadingAllDayLong")
+
+
+
 

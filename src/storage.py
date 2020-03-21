@@ -33,7 +33,7 @@
 import os
 from datetime import datetime
 
-from src.mixins import QueryMixin, RequestMixin
+from src.mixins import QueryMixin, RequestMixin, SqlConnect
 
 class BaseStorage(RequestMixin):
     def __init__(self, path=None, clients=None, *args, **kwargs):
@@ -84,6 +84,7 @@ class SqlStorage(BaseStorage, QueryMixin):
         super().__init__(path=path, clients=clients)
         self.path = path
         self.clients = clients
+        self.connection = SqlConnect(self.path)
 
     def log(self):
         if not self.check_path():
@@ -107,7 +108,7 @@ class SqlStorage(BaseStorage, QueryMixin):
         rows = self.select_rows("stamps")
         for item in rows:
             row_stamp = datetime.fromisoformat(item["timestamp"])
-            if (timestamp - row_stamp).seconds < 720:
+            if (timestamp - row_stamp).seconds < 30:
                 return False
         self.log_timestamp(self.timestamp)
         return True
@@ -129,8 +130,14 @@ class SqlStorage(BaseStorage, QueryMixin):
     def filter_new(self, data):
         for torrent in data:
             row = self.torrent_exists("static", "hash", torrent["hash"])
-            if not row: self.create_new_torrent(torrent)
-            else: yield self.filter_data_fields(torrent)
+            if not row:
+                self.create_new_torrent(torrent)
+                continue
+            fields = [i for i in row.keys() if torrent[i] != row[i]]
+            if len(fields) <= 2:
+                yield self.filter_data_fields(torrent)
+            else:
+                self.delete_row("static","hash",row["hash"])
 
 
     def get_save_values(self, torrent):

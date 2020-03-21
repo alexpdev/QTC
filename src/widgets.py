@@ -32,20 +32,21 @@
 ################################################################################
 
 import itertools
-from PyQt5.QtGui import QFont
+
+from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
+
 from PyQt5.QtWidgets import (QComboBox, QFrame, QListWidget, QListWidgetItem,
-                             QPushButton, QTableWidget, QTableWidgetItem,QTreeWidget, QTreeWidgetItem, QMenuBar, QMenu)
+                             QPushButton, QTreeWidget, QTreeWidgetItem, QMenuBar, QMenu, QTableView, QTableWidgetItem)
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QItemSelectionModel, QVariant, QRect
 
 
-class TableWidget(QTableWidget):
-    def __init__(self,parent=None):
+class TableView(QTableView):
+    def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.parent = parent
-        self.setObjectName(u"tableWidget")
-        self.setFrameShape(QFrame.Panel)
-        self.setFrameShadow(QFrame.Sunken)
+        self.parent = None
+
+
 
 
 class ListWidget(QListWidget):

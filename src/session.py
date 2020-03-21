@@ -36,7 +36,7 @@ import json
 import pickle
 from pathlib import Path
 from datetime import datetime
-from src.mixins import QueryMixin
+from src.mixins import QueryMixin, SqlConnect
 from src.window import Win
 from src.models import StaticModel,DataModel
 from src.serialize import Converter as Conv
@@ -67,6 +67,7 @@ class SqlSession(QueryMixin,BaseSession):
         super().__init__(path,clients)
         self.path = path
         self.clients = clients
+        self.connection = SqlConnect(self.path)
 
     def get_client_names(self):
         names = [i for i in self.clients]
@@ -78,7 +79,6 @@ class SqlSession(QueryMixin,BaseSession):
         rows = self.select_where(table,field,client)
         for row in rows:
             model = StaticModel(row)
-
             v = (row["name"],row["hash"],row["client"])
             yield v
 
