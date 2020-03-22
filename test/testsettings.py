@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-## Qbt Companion v0.1
+## QTorrentCompanion v0.2
 ##
-## This code written for the "Qbt Companion" program
+## This code written for the "QTorrentCompanion" program
 ##
 ## This project is licensed with:
 ## GNU AFFERO GENERAL PUBLIC LICENSE
@@ -26,7 +26,7 @@
 ## CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
 ## INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
 ## OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
-### PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+## PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 ######
 ################################################################################
 
@@ -50,13 +50,6 @@ LOCAL1_CLIENT = os.environ["LOCAL1_CLIENT"]
 LOCAL2_CLIENT = os.environ["LOCAL2_CLIENT"]
 CLIENTS = [LOCAL1_CLIENT,LOCAL2_CLIENT,"seedbox"]
 DETAILS = {
-    # LOCAL1_CLIENT:{
-    #     "url": LOCAL1,
-    #     "credentials":{
-    #         "username" : USER,
-    #         "password" : PASS
-    #     }
-    # },
     LOCAL2_CLIENT :{
         "url": LOCAL2,
         "credentials":{

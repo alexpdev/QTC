@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-## Qbt Companion v0.1
+## QTorrentCompanion v0.2
 ##
-## This code written for the "Qbt Companion" program
+## This code written for the "QTorrentCompanion" program
 ##
 ## This project is licensed with:
 ## GNU AFFERO GENERAL PUBLIC LICENSE
@@ -26,46 +26,38 @@
 ## CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
 ## INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
 ## OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
-### PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+## PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+###
 ######
 ################################################################################
 
 import sys
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 from threading import Thread
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR); load_dotenv()
+sys.path.append(BASE_DIR)
 BASE_DIR = Path(BASE_DIR)
 try:
     from src._settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
 except:
-    from src.settings import (DATA_DIR,
-                              DB_NAME,
-                              DETAILS,
-                              DEBUG)
+    from src.settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
 
 
 from src.storage import SqlStorage
 from src.session import SqlSession
 
-kwargs = {
-    "dbg" : False,
-    "backend" : "Sqlite3",
-}
 
-def main(**kwargs):
+def main():
     database_path = BASE_DIR / DATA_DIR / DB_NAME
     clients = DETAILS
     storage = SqlStorage(database_path,clients)
     session = SqlSession(database_path,clients)
-    args = storage,session
     log_thread = Thread(target=storage.log)
     log_thread.start()
     session.mainloop()
-    return
+    return 0
 
 if __name__ == "__main__":
-    main(**kwargs)
+    main()

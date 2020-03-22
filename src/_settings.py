@@ -32,6 +32,8 @@
 # Default and Custom Configuration Data Go Here
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 
 
 DB_NAME = "qbtdata.db"

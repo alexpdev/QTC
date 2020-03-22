@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-## Qbt Companion v0.1
+## QTorrentCompanion v0.2
 ##
-## This code written for the "Qbt Companion" program
+## This code written for the "QTorrentCompanion" program
 ##
 ## This project is licensed with:
 ## GNU AFFERO GENERAL PUBLIC LICENSE
@@ -26,7 +26,8 @@
 ## CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
 ## INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
 ## OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
-### PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+## PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+###
 ######
 ################################################################################
 
@@ -103,20 +104,19 @@ class RequestMixin:
 
 class QueryMixin:
 
+
     def torrent_exists(self,table,field,value):
         rows = self.select_where(table,field,value)
         if rows: return rows[0]
         return False
 
     def log_timestamp(self,stamp):
-        # with SqlConnect(self.path) as cur:
         with self.connection as cur:
             statement = f"INSERT INTO stamps VALUES (?)"
             cur.execute(statement,(stamp,))
         return
 
     def save_to_db(self,data,table_name):
-        # with SqlConnect(self.path) as cur:
         with self.connection as cur:
             columns, values, params = self.get_save_values(data)
             stat = f"INSERT INTO {table_name} ({columns}) VALUES ({params})"
@@ -124,14 +124,12 @@ class QueryMixin:
         return
 
     def save_many_to_db(self,columns,commit_values,params,table_name):
-        # with SqlConnect(self.path) as cur:
         with self.connection as cur:
             cmd = f"INSERT INTO {table_name} ({columns}) VALUES ({params})"
             cur.executemany(cmd,commit_values)
         return
 
     def select_rows(self,table):
-        # with SqlConnect(self.path) as cur:
         with self.connection as cur:
             statement = f"SELECT * FROM {table}"
             r = cur.execute(statement)
@@ -139,7 +137,6 @@ class QueryMixin:
         return rows
 
     def select_where(self,table,field,value):
-        # with SqlConnect(self.path) as cur:
         with self.connection as cur:
             stmnt = f"SELECT * FROM {table} WHERE {field} == ?"
             r = cur.execute(stmnt,(value,))
@@ -147,7 +144,6 @@ class QueryMixin:
         return rows
 
     def select_fields(self,table,fields,condition,value):
-        # with SqlConnect(self.path) as cur:
         with self.connection as cur:
             query = f"SELECT {fields} FROM {table} WHERE {condition} == ?"
             r = cur.execute(query,(value,))
@@ -155,14 +151,12 @@ class QueryMixin:
         return rows
 
     def create_db_table(self,headers,table_name):
-        # with SqlConnect(self.path) as cur:
         with self.connection as cur:
             statement = f"CREATE TABLE {table_name} ({headers})"
             cur.execute(statement)
         return
 
     def update_table(self,table,column,value,hashe):
-        # with SqlConnect(self.path) as cur:
         with self.connection as cur:
             statement = f"UPDATE {table} SET {column} = ? WHERE hash == ?"
             cur.execute(statement,(value,hashe))
@@ -170,7 +164,6 @@ class QueryMixin:
 
 
     def delete_row(self,table_name,field,value):
-        # with SqlConnect(self.path) as cur:
         with self.connection as cur:
             statement = f"DELETE FROM {table_name} WHERE {field} = ?"
             cur.execute(statement,(value,))

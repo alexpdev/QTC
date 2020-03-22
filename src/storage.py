@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-# Qbt Companion v0.1
+# QTorrentCompanion v0.2
 ##
-# This code written for the "Qbt Companion" program
+# This code written for the "QTorrentCompanion" program
 ##
 # This project is licensed with:
 # GNU AFFERO GENERAL PUBLIC LICENSE

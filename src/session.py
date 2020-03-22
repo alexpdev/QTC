@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-## Qbt Companion v0.1
+## QTorrentCompanion v0.2
 ##
-## This code written for the "Qbt Companion" program
+## This code written for the "QTorrentCompanion" program
 ##
 ## This project is licensed with:
 ## GNU AFFERO GENERAL PUBLIC LICENSE
@@ -26,7 +26,8 @@
 ## CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
 ## INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
 ## OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
-### PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+## PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+###
 ######
 ################################################################################
 
@@ -38,15 +39,14 @@ from pathlib import Path
 from datetime import datetime
 from src.mixins import QueryMixin, SqlConnect
 from src.window import Win
-from src.models import StaticModel,DataModel
 from src.serialize import Converter as Conv
 from PyQt5.QtWidgets import QApplication
+
 
 class BaseSession:
     def __init__(self,path,clients,*args,**kwargs):
         self.path = path
         self.clients = clients
-        self.models = {}
         self.static_fields = ("hash", "client", "name",
                               "tracker", "magnet_uri",
                               "save_path", "total_size",
@@ -78,19 +78,18 @@ class SqlSession(QueryMixin,BaseSession):
         field = "client"
         rows = self.select_where(table,field,client)
         for row in rows:
-            model = StaticModel(row)
             v = (row["name"],row["hash"],row["client"])
             yield v
 
     def get_data_rows(self,torrent_hash,client):
         args = ("data","hash",torrent_hash)
         rows = self.select_where(*args)
-        return Conv.convert_values(rows)
+        return rows
 
     def get_static_rows(self,torrent_hash,client):
         args = ("static","hash",torrent_hash)
         rows = self.select_where(*args)
-        return Conv.convert_values(rows)
+        return rows
 
     def mainloop(self):
         app = QApplication(sys.argv)

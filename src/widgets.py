@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-## Qbt Companion v0.1
+## QTorrentCompanion v0.2
 ##
-## This code written for the "Qbt Companion" program
+## This code written for the "QTorrentCompanion" program
 ##
 ## This project is licensed with:
 ## GNU AFFERO GENERAL PUBLIC LICENSE
@@ -35,89 +35,68 @@ import itertools
 
 from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
 
-from PyQt5.QtWidgets import (QComboBox, QFrame, QListWidget, QListWidgetItem,
-                             QPushButton, QTreeWidget, QTreeWidgetItem, QMenuBar, QMenu, QTableView, QTableWidgetItem)
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QTableView
 
-from PyQt5.QtCore import Qt, QItemSelectionModel, QVariant, QRect
+from PyQt5.QtCore import Qt
+
+from src.factory import ItemFactory
 
 
 class TableView(QTableView):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.parent = None
+        self.setShowGrid(True)
+        self.setStyleSheet("background: #ddd; border: 1px solid #700; gridline-color: #79a392; color: #000;")
+
+    def assign(self,session):
+        self.session = session
+        self.manager = ItemModel(parent=self)
+        self.setModel(self.manager)
 
 
-
-
-class ListWidget(QListWidget):
+class ItemModel(QStandardItemModel):
     def __init__(self,parent=None):
-        super().__init__(parent=parent)
-        self.setStyleSheet("""color : #000; background : #e6e6e6;
-                              border : 2px solid #600;""")
+        super().__init__(parent=None)
+        self.view = parent
         self.row_count = 0
-        self.setSpacing(2)
-        font = FancyFont()
-        self.setFont(font)
+        self.factory = ItemFactory()
+        self.flags = (Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
-    def appendItem(self,item):
-        self.addItem(item)
-        self.row_count += 1
+    def receive_static(self,data):
+        self.isEmpty()
+        row = data[0]
+        self.setColumnCount(2)
+        self.setRowCount(len(row))
+        for k,v in zip(row.keys(),tuple(row)):
+            label,item = self.factory.gen_item(k,v)
+            self.setItem(self.row_count,0,label)
+            self.setItem(self.row_count,1,item)
+            self.row_count += 1
+        self.view.resizeColumnsToContents()
+
+    def receive_table(self,data):
+        self.isEmpty()
+        first = data[0]
+        keys = list(first.keys())
+        self.setColumnCount(len(first))
+        self.setRowCount(len(data))
+        for x,row in enumerate(data):
+            for y,vals in enumerate(tuple(row)):
+                field,val = self.factory.gen_item(keys[y],vals)
+                if x == 0:
+                    self.setHorizontalHeaderItem(y,field)
+                self.setItem(x,y,val)
+            self.row_count += 1
 
     def isEmpty(self):
         self.clear()
         indeces = list(range(self.row_count))
         for idx in indeces[::-1]:
-            item = self.takeItem(idx)
+            item = self.takeRow(idx)
             del item
             self.row_count -= 1
         return True
-
-
-class TorrentNames(ListWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-        self.sansfont = SansFont()
-
-    def assign(self,session,static,table):
-        self.session = session
-        self.static = static
-        self.table = table
-        self.itemSelectionChanged.connect(self.display_info)
-
-    def display_info(self):
-        self.static.isEmpty()
-        selected = self.currentItem()
-        t_hash = selected.t_hash
-        client = selected.client
-        self.pull_static_from_db(t_hash,client)
-        self.pull_data_from_db(t_hash,client)
-
-    def pull_data_from_db(self,t_hash,client):
-        db_rows = self.session.get_data_rows(t_hash,client)
-        model = db_rows[0]
-        headers = tuple(k for k,v in model)
-        rows = len(db_rows)
-        cols = len(headers)
-        self.table.setRowCount(rows)
-        flags = (Qt.ItemIsSelectable|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled)
-        self.table.setColumnCount(cols)
-        self.table.setHorizontalHeaderLabels(headers)
-        for x,row in enumerate(db_rows):
-            for y,value in enumerate(row):
-                item = QTableWidgetItem(str(value[1]))
-                item.setFont(self.sansfont)
-                item.setFlags(flags)
-                self.table.setItem(x,y,item)
-        return
-
-    def pull_static_from_db(self,t_hash,client):
-        values = self.session.get_static_rows(t_hash,client)
-        for key,value in itertools.chain.from_iterable(values):
-            txt = f"{key}  |  {value}"
-            item = ListItem(txt)
-            item.setFont(self.sansfont)
-            self.static.appendItem(item)
-        return
 
 
 class TreeWidget(QTreeWidget):
@@ -158,65 +137,14 @@ class TreeWidget(QTreeWidget):
         return
 
     def display_info(self):
-        self.static.isEmpty()
         selected = self.currentItem()
-        if selected.top:
-            return
+        if selected.top: return
         t_hash = selected.t_hash
         client = selected.client
-        self.pull_static_from_db(t_hash,client)
-        self.pull_data_from_db(t_hash,client)
-
-    def pull_data_from_db(self,t_hash,client):
         db_rows = self.session.get_data_rows(t_hash,client)
-        model = db_rows[0]
-        headers = tuple(k for k,v in model)
-        rows = len(db_rows)
-        cols = len(headers)
-        self.table.setRowCount(rows)
-        flags = (Qt.ItemIsSelectable|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled)
-        self.table.setColumnCount(cols)
-        self.table.setHorizontalHeaderLabels(headers)
-        for x,row in enumerate(db_rows):
-            for y,value in enumerate(row):
-                item = QTableWidgetItem(str(value[1]))
-                item.setFont(self.sansfont)
-                item.setFlags(flags)
-                self.table.setItem(x,y,item)
-        return
-
-    def pull_static_from_db(self,t_hash,client):
         values = self.session.get_static_rows(t_hash,client)
-        for key,value in itertools.chain.from_iterable(values):
-            txt = f"{key}  |  {value}"
-            item = ListItem(txt)
-            item.setFont(self.sansfont)
-            self.static.appendItem(item)
-        return
-
-
-class CustomFont(QFont):
-    info = {}
-    def __init__(self):
-        super().__init__()
-        self.assign()
-
-    def assign(self):
-        self.setFamily(self.info["name"])
-        self.setPointSize(self.info["size"])
-        self.setBold(self.info["bold"])
-
-
-class FancyFont(CustomFont):
-    info = {"name":"Leelawadee","size":9,"bold":False}
-    def __init__(self):
-        super().__init__()
-
-
-class SansFont(CustomFont):
-    info = {"name":"Dubai Medium","size":9,"bold":True}
-    def __init__(self):
-        super().__init__()
+        self.static.manager.receive_static(values)
+        self.table.manager.receive_table(db_rows)
 
 
 class TreeItem(QTreeWidgetItem):
@@ -243,53 +171,25 @@ class TreeItem(QTreeWidgetItem):
         return item
 
 
-class ComboBox(QComboBox):
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-        self.setStyleSheet("background : #F5F5F5; color : #000000; border : 2px solid #600;")
-        font = SansFont()
-        font.setBold(False)
-        font.setPointSize(11)
-        self.setFont(font)
+class CustomFont(QFont):
+    info = {}
+    def __init__(self):
+        super().__init__()
+        self.assign()
 
-    def assign(self,session):
-        self.session = session
-        for client in self.session.get_client_names():
-            self.addItem(client)
-        return
+    def assign(self):
+        self.setFamily(self.info["name"])
+        self.setPointSize(self.info["size"])
+        self.setBold(self.info["bold"])
 
-class ListItem(QListWidgetItem):
-    def __init__(self,name):
-        super().__init__(name)
 
-    @classmethod
-    def create(cls,name,t_hash,client):
-        item = cls(name)
-        item.label = name
-        item.t_hash = t_hash
-        item.client = client
-        return item
+class FancyFont(CustomFont):
+    info = {"name":"Leelawadee","size":9,"bold":False}
+    def __init__(self):
+        super().__init__()
 
-class StaticButton(QPushButton):
-    def __init__(self,txt,parent):
-        super().__init__(txt,parent)
-        self.setStyleSheet(
-            "background : #1b3078; color : #fff; border : 2px solid #600; padding: 5px; margin : 3px;")
-        self.fancyfont = FancyFont()
-        self.fancyfont.setPointSize(8)
-        self.setFont(self.fancyfont)
 
-    def assign(self,combo,session,torrentNames):
-        self.combo = combo
-        self.session = session
-        self.torrentNames = torrentNames
-        self.clicked.connect(self.show_info)
-
-    def show_info(self):
-        self.torrentNames.isEmpty()
-        session_name = self.combo.currentText()
-        for vals in self.session.get_torrent_names(session_name):
-            item = ListItem.create(*vals)
-            item.setFont(self.fancyfont)
-            self.torrentNames.addItem(item)
-        return
+class SansFont(CustomFont):
+    info = {"name":"Dubai Medium","size":9,"bold":True}
+    def __init__(self):
+        super().__init__()
