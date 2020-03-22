@@ -50,6 +50,11 @@ from src.session import SqlSession
 
 
 def main():
+    """ Esecute main program.
+
+    Returns:
+        int -- returns 0 on program exit.
+    """
     database_path = BASE_DIR / DATA_DIR / DB_NAME
     clients = DETAILS
     storage = SqlStorage(database_path,clients)

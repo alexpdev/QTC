@@ -4,29 +4,29 @@
 ################################################################################
 ######
 ###
-# QTorrentCompanion v0.2
+## QTorrentCompanion v0.2
 ##
-# This code written for the "QTorrentCompanion" program
+## This code written for the "QTorrentCompanion" program
 ##
-# This project is licensed with:
-# GNU AFFERO GENERAL PUBLIC LICENSE
+## This project is licensed with:
+## GNU AFFERO GENERAL PUBLIC LICENSE
 ##
-# Please refer to the LICENSE file locate in the root directory of this
-# project or visit <https://www.gnu.org/licenses/agpl-3.0 for more
-# information.
+## Please refer to the LICENSE file locate in the root directory of this
+## project or visit <https://www.gnu.org/licenses/agpl-3.0 for more
+## information.
 ##
-# THE COPYRIGHT HOLDERS PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY
-# KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-# THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH
-# YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-# NECESSARY SERVICING, REPAIR OR CORRECTION.
+## THE COPYRIGHT HOLDERS PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY
+## KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+## THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH
+## YOU. SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+## NECESSARY SERVICING, REPAIR OR CORRECTION.
 ##
-# IN NO EVENT ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR
-# CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
-# INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
-# OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
-# PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+## IN NO EVENT ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR
+## CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
+## INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
+## OUT OF THE USE OR INABILITY TO USE THE PROGRAM EVEN IF SUCH HOLDER OR OTHER
+## PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 ######
 ################################################################################
 
@@ -36,6 +36,7 @@ from datetime import datetime
 from src.mixins import QueryMixin, RequestMixin, SqlConnect
 
 class BaseStorage(RequestMixin):
+
     def __init__(self, path=None, clients=None, *args, **kwargs):
         self.path = path
 
@@ -78,13 +79,13 @@ class BaseStorage(RequestMixin):
                 del info[k]
         return info
 
-
 class SqlStorage(BaseStorage, QueryMixin):
     def __init__(self, path=None, clients=None, *args, **kwargs):
         super().__init__(path=path, clients=clients)
         self.path = path
         self.clients = clients
         self.connection = SqlConnect(self.path)
+
 
     def log(self):
         if not self.check_path():
@@ -102,6 +103,7 @@ class SqlStorage(BaseStorage, QueryMixin):
         self.format_data(data)
         return True
 
+
     def check_timelog(self):
         timestamp = datetime.now()
         self.timestamp = datetime.isoformat(timestamp)
@@ -113,10 +115,12 @@ class SqlStorage(BaseStorage, QueryMixin):
         self.log_timestamp(self.timestamp)
         return True
 
+
     def check_path(self):
         if os.path.isfile(self.path):
             return True
         return False
+
 
     def format_data(self, data):
         vals = []
@@ -126,6 +130,7 @@ class SqlStorage(BaseStorage, QueryMixin):
         if not vals:
             return
         return self.save_many_to_db(columns, vals, params, "data")
+
 
     def filter_new(self, data):
         for torrent in data:
@@ -148,12 +153,14 @@ class SqlStorage(BaseStorage, QueryMixin):
             params.append("?")
         return ", ".join(column), values, ", ".join(params)
 
+
     def create_new_torrent(self, torrent):
         staticFields = self.filter_static_fields(torrent)
         dataFields = self.filter_data_fields(torrent)
         self.save_to_db(staticFields, "static")
         self.save_to_db(dataFields, "data")
         return
+
 
     def installation_script(self):
         stypes = {

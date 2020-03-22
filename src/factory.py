@@ -36,6 +36,7 @@ from PyQt5.QtGui import QStandardItem
 from PyQt5.QtCore import Qt
 
 class ItemFactory:
+    """ Factory Class for generating items for GUI tables. """
 
     labels = { "completed":"Completed","time_active":"Time Active",
             "downloaded":"Downloaded","downloaded_session":"Downloaded Session",
@@ -63,6 +64,17 @@ class ItemFactory:
 
 
     def gen_item(self,field,data):
+        """ ### Class entry point for generating QStandardItems for GUI Tables
+
+        Arguments: \n
+            field {str} -- Item Description from db header. \n
+            data {any} -- The data for that needs to be converted into a
+                          readable format. Displayed in table under the field
+                           header.
+
+        Returns: \n
+            {tuple} -- collection of QStandardItems with supplied converted data
+        """
         label = self.get_label(field)
         for item in self.funcs:
             if field in item: break

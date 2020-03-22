@@ -31,15 +31,9 @@
 ######
 ################################################################################
 
-import os
 import sys
-import json
-import pickle
-from pathlib import Path
-from datetime import datetime
 from src.mixins import QueryMixin, SqlConnect
 from src.window import Win
-from src.serialize import Converter as Conv
 from PyQt5.QtWidgets import QApplication
 
 
