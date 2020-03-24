@@ -40,7 +40,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 BASE_DIR = Path(BASE_DIR)
 try:
-    from src._settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
+    from src.__settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
 except:
     from src.settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
 

@@ -41,9 +41,6 @@ from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMenu,
 from src.widgets import (FancyFont, TreeWidget, SansFont,
                          TableView, ItemModel, MenuBar)
 
-class SomeKindOfError(Exception):
-    pass
-
 class Win(QMainWindow):
 
     def __init__(self, parent=None):
@@ -76,44 +73,22 @@ class Win(QMainWindow):
         statusbar.setObjectName(u"statusbar")
         statusbar.setStyleSheet("""background: #000; color: #0ff;
                                 border-top: 1px solid #0ff;""")
-        self.file_menu = QMenu("File",parent=self.menubar)
-        self.menubar.addMenu(self.file_menu)
-        exit_action = QAction("Exit",parent=self)
-        self.file_menu.addAction(exit_action)
-        exit_action.triggered.connect(self.exit_window)
         QMetaObject.connectSlotsByName(self)
 
     def exit_window(self):
         self.destroy()
         self.session.end_session()
 
-    def add_menus(self):
-        self.data_menu = QMenu("Fields",parent=self.menubar)
-        self.menubar.addMenu(self.data_menu)
-        self.menu_actions = {}
-        for field in self.session.data_fields:
-            action = QAction(field,parent=self)
-            action.setCheckable(True)
-            func = lambda checked,x=field: self.hide_column(x,checked)
-            self.menu_actions[field] = (action,func)
-            self.data_menu.addAction(action)
-            action.triggered.connect(func)
-        return
-
-
-    def hide_column(self,field,checked):
-        for x,key in enumerate(self.dataTable.get_column_keys()):
-            if field == key:
-                if checked:
-                    self.dataTable.hideColumn(x)
-                else:
-                    self.dataTable.showColumn(x)
-                return
-        raise SomeKindOfError
+    def add_file_menu(self):
+        self.file_menu = QMenu("File",parent=self.menubar)
+        self.menubar.addMenu(self.file_menu)
+        exit_action = QAction("Exit",parent=self)
+        self.file_menu.addAction(exit_action)
+        exit_action.triggered.connect(self.exit_window)
 
     def assign_session(self,session):
         self.session = session
         self.staticTable.assign(self.session,self)
         self.dataTable.assign(self.session,self)
         self.tree.assign(self.session,self.staticTable,self.dataTable)
-        self.add_menus()
+        self.menubar.assign(self.session,self.staticTable,self.dataTable,self)

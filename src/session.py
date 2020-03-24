@@ -44,19 +44,18 @@ class BaseSession:
     def __init__(self,path,clients,*args,**kwargs):
         self.path = path
         self.clients = clients
-        self.static_fields = ("hash", "client", "name",
-                              "tracker", "magnet_uri",
-                              "save_path", "total_size",
-                              "added_on", "completion_on",
-                              "state", "category", "tags")
+        self.static_fields = ("name", "client", "total_size",
+                              "tracker", "added_on", "hash",
+                              "save_path", "category", "completion_on",
+                              "state", "magnet_uri", "tags")
 
-        self.data_fields = ("hash", "client", "timestamp",
-                            "ratio", "uploaded", "time_active",
-                            "completed", "size", "downloaded",
-                            "num_seeds", "num_leechs", "last_activity",
-                            "seen_complete", "dlspeed", "upspeed",
-                            "num_complete", "num_incomplete",
-                            "downloaded_session", "uploaded_session")
+        self.data_fields = ("timestamp", "uploaded", "downloaded",
+                            "ratio", "size", "time_active",
+                            "seen_complete", "last_activity", "hash",
+                            "client", "downloaded_session", "uploaded_session",
+                            "upspeed", "dlspeed", "completed",
+                            "num_complete", "num_seeds", "num_incomplete",
+                            "num_leechs",)
 
 
 class SqlSession(QueryMixin,BaseSession):
@@ -102,3 +101,4 @@ class SqlSession(QueryMixin,BaseSession):
         self.win.assign_session(self)
         self.win.show()
         sys.exit(self.app.exec_())
+

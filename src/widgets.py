@@ -43,42 +43,90 @@ from PyQt5.QtCore import Qt
 from src.factory import ItemFactory
 
 
+class SomeKindOfError(Exception):
+    pass
+
+
 class MenuBar(QMenuBar):
     def __init__(self,parent=None):
         super().__init__(parent=parent)
+        self.window = parent
+        self.setObjectName(u"menubar")
         font = SansFont()
         font.setPointSize(11)
         font.setBold(True)
-        self.main = parent
-        self.setObjectName(u"menubar")
         self.setFont(font)
-        self.setStyleSheet("""background: #000; color: #0cc;
-                              border-bottom: 1px solid #0ff;""")
+        self.setStyleSheet("""
+            MenuBar {
+                background: #000;
+                color: #0cc;
+                border-bottom: 1px solid #0ff;
+                }
+            QMenu::item:selected {
+                background-color: #aaa;
+            }""")
 
+    def add_menus(self):
+        self.window.add_file_menu()
+        self.columnsMenu = QMenu("Columns",parent=self)
+        self.addMenu(self.columnsMenu)
+        for field in self.dataTable.get_columns():
+            action = QAction(field,parent=self.window)
+            action.setCheckable(True)
+            func = lambda checked,x=field: self.toggle_column(x,checked)
+            self.columnsMenu.addAction(action)
+            action.triggered.connect(func)
+        return
+
+    def assign(self,session,staticTable,dataTable,win):
+        self.session = session
+        self.staticTable = staticTable
+        self.dataTable = dataTable
+        self.window = win
+        self.add_menus()
+
+    def toggle_column(self,field,checked):
+        columns = self.dataTable.get_columns()
+        idx = columns.index(field)
+        if checked:
+            self.dataTable.checks.append((field,idx))
+            self.dataTable.hideColumn(idx)
+        else:
+            self.dataTable.checks.remove((field,idx))
+            self.dataTable.showColumn(idx)
+        return
 
 
 class TableView(QTableView):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.main = parent
+        self.window = parent
         self.setShowGrid(True)
         self.setStyleSheet("background: #ddd; border: 1px solid #700; gridline-color: #79a392; color: #000;")
+        self.checks = []
 
-    def assign(self,session,main):
-        self.main = main
+    def assign(self,session,window):
+        self.window = window
         self.session = session
         self.manager = ItemModel(parent=self)
         self.manager.setSession(self.session)
         self.setModel(self.manager)
         return
 
-    def get_column_keys(self):
+    def get_columns(self):
         col = self.manager.col_map
-        return list(col.keys())
+        return col
 
-    def get_row_keys(self):
+    def get_rows(self):
         row = self.manager.row_map
-        return list(row.keys())
+        return row
+
+    def check_menus(self):
+        for field,idx in self.checks:
+            self.hideColumn(idx)
+        return
+
+
 
 
 class ItemModel(QStandardItemModel):
@@ -87,21 +135,20 @@ class ItemModel(QStandardItemModel):
         self.view = parent
         self.row_count = 0
         self.flags = (Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-        self.row_map = None
-        self.col_map = None
 
     def setSession(self,session):
         self.session = session
+        self.row_map = session.static_fields
+        self.col_map = session.data_fields
         return
 
     def receive_static(self,data):
         self.isEmpty()
         row = data[0]
-        self.row_map = row
         self.setColumnCount(2)
         self.setRowCount(len(row))
-        for k,v in zip(row.keys(),tuple(row)):
-            label,item = self.session.gen_items(k,v)
+        for field in self.row_map:
+            label,item = self.session.gen_items(field,row[field])
             self.setItem(self.row_count,0,label)
             self.setItem(self.row_count,1,item)
             self.row_count += 1
@@ -111,17 +158,17 @@ class ItemModel(QStandardItemModel):
     def receive_table(self,data):
         self.isEmpty()
         first = data[0]
-        self.col_map = first
-        keys = list(first.keys())
         self.setColumnCount(len(first))
         self.setRowCount(len(data))
+        headers = []
         for x,row in enumerate(data):
-            for y,vals in enumerate(tuple(row)):
-                field,val = self.session.gen_items(keys[y],vals)
+            for y,field in enumerate(self.col_map):
+                label,item = self.session.gen_items(field,row[field])
                 if x == 0:
-                    self.setHorizontalHeaderItem(y,field)
-                self.setItem(x,y,val)
+                    self.setHorizontalHeaderItem(y,label)
+                self.setItem(x,y,item)
             self.row_count += 1
+        self.view.check_menus()
         return
 
     def isEmpty(self):
