@@ -25,4 +25,5 @@ data/*.json
 
 # user-specific logfiles
 _settings.py
+_testsettings.py
 

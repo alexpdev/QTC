@@ -14,11 +14,6 @@ QTorrentCompanion is a small GUI program for viewing, and comparing statistics g
 
 - This project is still in the early stages of development.
 
-This project uses:
->Python 3.*
->Sqlite3 from python standard lib
->Qt GUI with PyQt5
-
 **Instructions**
 * Modify the `settings.py` file located in the `src` directory with your client information
 * Ensure you have _Pythonv3.*_ and all required packages installed in the `requirements.txt` file.

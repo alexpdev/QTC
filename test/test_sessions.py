@@ -32,12 +32,13 @@
 
 import os
 import sys
-import json
-from pathlib import Path
 from unittest import TestCase
-from dotenv import load_dotenv
-load_dotenv()
-from test.testsettings import DETAILS,DB_NAME,DATA_DIR
+sys.path.append(os.getcwd())
+try:
+    from test._testsettings import DETAILS,DB_NAME,DATA_DIR
+except:
+    from test.testsettings import DETAILS,DB_NAME,DATA_DIR
+
 from src.session import BaseSession,SqlSession
 from src.storage import SqlStorage
 
@@ -54,8 +55,9 @@ class TestSession(TestCase):
         self.clients = DETAILS
         self.path = DATA_DIR / DB_NAME
 
-    def tearDown(self):
-        db = self.path
+    @classmethod
+    def tearDownClass(cls):
+        db =DATA_DIR / DB_NAME
         if os.path.isfile(db):
             os.remove(db)
 

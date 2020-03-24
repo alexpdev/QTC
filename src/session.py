@@ -32,9 +32,12 @@
 ################################################################################
 
 import sys
-from src.mixins import QueryMixin, SqlConnect
-from src.window import Win
+
 from PyQt5.QtWidgets import QApplication
+
+from src.mixins import QueryMixin, SqlConnect
+from src.factory import ItemFactory
+from src.window import Win
 
 
 class BaseSession:
@@ -62,6 +65,11 @@ class SqlSession(QueryMixin,BaseSession):
         self.path = path
         self.clients = clients
         self.connection = SqlConnect(self.path)
+        self.factory = ItemFactory()
+
+    def gen_items(self,field,data):
+        items = self.factory.gen_item(field,data)
+        return items
 
     def get_client_names(self):
         names = [i for i in self.clients]
@@ -85,9 +93,12 @@ class SqlSession(QueryMixin,BaseSession):
         rows = self.select_where(*args)
         return rows
 
+    def end_session(self):
+        sys.exit(self.app.exec_())
+
     def mainloop(self):
-        app = QApplication(sys.argv)
-        win = Win()
-        win.assign_session(self)
-        win.show()
-        sys.exit(app.exec_())
+        self.app = QApplication(sys.argv)
+        self.win = Win()
+        self.win.assign_session(self)
+        self.win.show()
+        sys.exit(self.app.exec_())

@@ -32,19 +32,14 @@
 
 import os
 import sys
-import json
 import sqlite3
 from pathlib import Path
 from unittest import TestCase
-
-from dotenv import load_dotenv
-
-# BASE_DIR = Path(os.path.abspath(__file__)).parent.parent
-# sys.path.append(BASE_DIR)
-load_dotenv()
-
-from test.testsettings import DATA_DIR, DB_NAME, DETAILS
-
+sys.path.append(os.getcwd())
+try:
+    from test._testsettings import DETAILS,DB_NAME,DATA_DIR
+except:
+    from test.testsettings import DETAILS,DB_NAME,DATA_DIR
 
 from src.storage import BaseStorage, SqlStorage
 
@@ -56,21 +51,20 @@ class TestStorage(TestCase):
         path = DATA_DIR / DB_NAME
         if os.path.isfile(path):
             os.remove(path)
-        pass
+        storage = SqlStorage(path,DETAILS)
+        storage.log()
 
     @classmethod
     def tearDownClass(cls):
-        pass
+        db = DATA_DIR / DB_NAME
+        if os.path.isfile(db):
+            os.remove(db)
 
     def setUp(self):
         self.path = DATA_DIR / DB_NAME
         self.clients = DETAILS
         self.storage = SqlStorage(self.path,self.clients)
 
-    def tearDown(self):
-        db = self.path
-        if os.path.isfile(db):
-            os.remove(db)
 
     def test_storage_constructors(self):
         base_storage = BaseStorage(self.path,self.clients)
@@ -97,7 +91,7 @@ class TestStorage(TestCase):
                 self.assertIn(i,torrent)
 
     def test_log_function(self):
-        self.assertTrue(self.storage.log())
+        self.assertFalse(self.storage.log())
         self.assertTrue(os.path.isfile(self.path))
         self.assertFalse(self.storage.log())
         for row in self.storage.select_rows("static"):

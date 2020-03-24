@@ -35,24 +35,50 @@ import itertools
 
 from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
 
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QTableView
+from PyQt5.QtWidgets import (QTreeWidget, QTreeWidgetItem, QTableView,
+                             QFrame, QMenuBar, QMenu, QAction)
 
 from PyQt5.QtCore import Qt
 
 from src.factory import ItemFactory
 
 
+class MenuBar(QMenuBar):
+    def __init__(self,parent=None):
+        super().__init__(parent=parent)
+        font = SansFont()
+        font.setPointSize(11)
+        font.setBold(True)
+        self.main = parent
+        self.setObjectName(u"menubar")
+        self.setFont(font)
+        self.setStyleSheet("""background: #000; color: #0cc;
+                              border-bottom: 1px solid #0ff;""")
+
+
+
 class TableView(QTableView):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.parent = None
+        self.main = parent
         self.setShowGrid(True)
         self.setStyleSheet("background: #ddd; border: 1px solid #700; gridline-color: #79a392; color: #000;")
 
-    def assign(self,session):
+    def assign(self,session,main):
+        self.main = main
         self.session = session
         self.manager = ItemModel(parent=self)
+        self.manager.setSession(self.session)
         self.setModel(self.manager)
+        return
+
+    def get_column_keys(self):
+        col = self.manager.col_map
+        return list(col.keys())
+
+    def get_row_keys(self):
+        row = self.manager.row_map
+        return list(row.keys())
 
 
 class ItemModel(QStandardItemModel):
@@ -60,34 +86,43 @@ class ItemModel(QStandardItemModel):
         super().__init__(parent=None)
         self.view = parent
         self.row_count = 0
-        self.factory = ItemFactory()
         self.flags = (Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+        self.row_map = None
+        self.col_map = None
+
+    def setSession(self,session):
+        self.session = session
+        return
 
     def receive_static(self,data):
         self.isEmpty()
         row = data[0]
+        self.row_map = row
         self.setColumnCount(2)
         self.setRowCount(len(row))
         for k,v in zip(row.keys(),tuple(row)):
-            label,item = self.factory.gen_item(k,v)
+            label,item = self.session.gen_items(k,v)
             self.setItem(self.row_count,0,label)
             self.setItem(self.row_count,1,item)
             self.row_count += 1
         self.view.resizeColumnsToContents()
+        return
 
     def receive_table(self,data):
         self.isEmpty()
         first = data[0]
+        self.col_map = first
         keys = list(first.keys())
         self.setColumnCount(len(first))
         self.setRowCount(len(data))
         for x,row in enumerate(data):
             for y,vals in enumerate(tuple(row)):
-                field,val = self.factory.gen_item(keys[y],vals)
+                field,val = self.session.gen_items(keys[y],vals)
                 if x == 0:
                     self.setHorizontalHeaderItem(y,field)
                 self.setItem(x,y,val)
             self.row_count += 1
+        return
 
     def isEmpty(self):
         self.clear()
@@ -108,7 +143,7 @@ class TreeWidget(QTreeWidget):
         self.fancyfont = FancyFont()
         self.sansfont = SansFont()
         self.sansfont.setPointSize(10)
-        self.fancyfont.setPointSize(9)
+        self.fancyfont.setPointSize(11)
         self.fancyfont.setBold(True)
         self.setFrameShadow(QFrame.Sunken)
         self.setAlternatingRowColors(True)
@@ -171,8 +206,7 @@ class TreeItem(QTreeWidgetItem):
         return item
 
 
-class CustomFont(QFont):
-    info = {}
+class _CustomFont(QFont):
     def __init__(self):
         super().__init__()
         self.assign()
@@ -183,13 +217,13 @@ class CustomFont(QFont):
         self.setBold(self.info["bold"])
 
 
-class FancyFont(CustomFont):
+class FancyFont(_CustomFont):
     info = {"name":"Leelawadee","size":9,"bold":False}
     def __init__(self):
         super().__init__()
 
 
-class SansFont(CustomFont):
-    info = {"name":"Dubai Medium","size":9,"bold":True}
+class SansFont(_CustomFont):
+    info = {"name":"Dubai Medium","size":8, "bold":False}
     def __init__(self):
         super().__init__()

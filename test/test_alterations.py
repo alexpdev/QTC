@@ -32,16 +32,15 @@
 
 import os
 import sys
-import json
-from pathlib import Path
-from PyQt5.QtWidgets import QApplication
 from unittest import TestCase
-from dotenv import load_dotenv
-load_dotenv()
-from test.testsettings import DETAILS,DB_NAME,DATA_DIR
-from src.window import Win
+sys.path.append(os.getcwd())
+try:
+    from test._testsettings import DETAILS,DB_NAME,DATA_DIR
+except:
+    from test.testsettings import DETAILS,DB_NAME,DATA_DIR
+
 from src.session import SqlSession
-from src.widgets import *
+
 from src.storage import SqlStorage,BaseStorage
 
 class TestOthers(TestCase):
@@ -56,9 +55,11 @@ class TestOthers(TestCase):
         self.clients = DETAILS
         self.path = DATA_DIR / DB_NAME
 
-
-    def tearDown(self):
-        pass
+    @classmethod
+    def tearDownClass(cls):
+        db = DATA_DIR / DB_NAME
+        if os.path.isfile(db):
+            os.remove(db)
 
     def test_session_queries(self):
         session = SqlSession(self.path,self.clients)

@@ -30,38 +30,44 @@
 ######
 ################################################################################
 
-import os
-import sys
 from pathlib import Path
-SETTINGS_FILE = Path(__file__).resolve()
+
+# No editing should be necessary
+SETTINGS_FILE = Path(__file__).resolve() #  This File Path
+
+# Application Root Directory
 BASE_DIR = SETTINGS_FILE.parents[1]
-sys.path.append(BASE_DIR)
-USER = os.environ["USERNAME"]
-PASS = os.environ["PASSWORD"]
-SEED_PASS = os.environ["SEEDBOXPASS"]
-SEED_URL = os.environ["SEEDBOXURL"]
-SEED_USER = os.environ["SEED_USER"]
+
+# path to data directory for testing purposes
+# This should not be the same as the main applications data_dir
 DATA_DIR = BASE_DIR / "temp" / "db"
+
+# Name of database file
 DB_NAME = "qbtdata.db"
+
+# testing data dir and db_file name concatenated
+# there shouldn't be any reason to edit this so leave as is
 DB_PATH = DATA_DIR / DB_NAME
-LOCAL1 = os.environ["LOCAL1"]
-LOCAL2 = os.environ["LOCAL2"]
-LOCAL1_CLIENT = os.environ["LOCAL1_CLIENT"]
-LOCAL2_CLIENT = os.environ["LOCAL2_CLIENT"]
-CLIENTS = [LOCAL1_CLIENT,LOCAL2_CLIENT,"seedbox"]
+
+# Torrent Client Login Credentials If Applicable
+USER = "admin"
+PASS = "admin"
+
+# client identifiers
+LOCAL_CLIENT = "local"
+
+
+# client urls for web api
+LOCAL = "http://127.0.0.1:8080/api/v2"  #Default url for most clients
+
+
+# for application use, leave as is
 DETAILS = {
-    LOCAL2_CLIENT :{
-        "url": LOCAL2,
+    LOCAL_CLIENT :{
+        "url": LOCAL,
         "credentials":{
             "username": USER,
             "password": PASS,
-        }
-    },
-    "seedbox" : {
-        "url" : SEED_URL,
-        "credentials":{
-            "username": SEED_USER,
-            "password": SEED_PASS,
         }
     }
 }

@@ -110,7 +110,7 @@ class SqlStorage(BaseStorage, QueryMixin):
         rows = self.select_rows("stamps")
         for item in rows:
             row_stamp = datetime.fromisoformat(item["timestamp"])
-            if (timestamp - row_stamp).seconds < 30:
+            if (timestamp - row_stamp).seconds < 600:
                 return False
         self.log_timestamp(self.timestamp)
         return True

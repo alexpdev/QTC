@@ -31,72 +31,53 @@
 ######
 ################################################################################
 
+import os
+import json
 from datetime import datetime,timedelta
 from PyQt5.QtGui import QStandardItem
 from PyQt5.QtCore import Qt
 
 class ItemFactory:
+
     """ Factory Class for generating items for GUI tables. """
 
-    labels = { "completed":"Completed","time_active":"Time Active",
-            "downloaded":"Downloaded","downloaded_session":"Downloaded Session",
-            "num_complete":"Total Complete","uploaded":"Uploaded",
-            "uploaded_session":"Uploaded Session","ratio":"Ratio",
-            "category":"Category", "tags":"Tags", "magnet_uri":"Magnet",
-            "total_size":"Total Size","save_path":"Save Path","client":"Client",
-            "num_incomplete":"Total Leeches","num_leechs":"Leechs Connected",
-            "timestamp":"Timestamp","num_seeds":"Total Seeds", "size":"Size",
-            "upspeed":"Upload Speed","dlspeed":"Download Speed", "hash":"Hash",
-            "last_activity":"Last Activity", "seen_complete":"Seen Complete",
-            "name":"Name", "state":"State", "tracker":"Tracker",
-            "added_on":"Added On", "completion_on" : "Completion On"}
+    def __init__(self):
+        """ Calls `self.load_fields()` immediately and returns. """
+        self.load_fields()
 
-    funcs = {("completed", "num_complete", "num_incomplete", "num_leechs",
-              "num_seeds", "hash", "client", "name", "tracker", "magnet_uri",
-              "save_path", "state", "category", "tags"): 1,
-             ("downloaded", "uploaded", "uploaded_session", "downloaded_session", "size", "total_size"): 2,
-             ("last_activity", "seen_complete"): 3,
-             ("ulspeed", "dlspeed"): 4,
-             ('added_on',"completion_on") : 5,
-             ("timestamp",): 6,
-             ("ratio",): 7,
-             ("time_active",): 8}
 
+    def load_fields(self):
+        """ loads field data from `fields.json` in the same directory. """
+        path = os.path.dirname(os.path.abspath(__file__))
+        json_file = os.path.join(path,"fields.json")
+        fields = json.load(open(json_file))
+        self.fields = fields
+        self.funcs = {0 : self.convert_const,    1 : self.convert_bytes,
+                      2 : self.convert_duration, 3 : self.convert_bps,
+                      4 : self.convert_time,     5 : self.convert_isotime,
+                      6 : self.convert_ratio,    7 : self.convert_delta}
 
     def gen_item(self,field,data):
-        """ ### Class entry point for generating QStandardItems for GUI Tables
-
-        Arguments: \n
-            field {str} -- Item Description from db header. \n
-            data {any} -- The data for that needs to be converted into a
-                          readable format. Displayed in table under the field
-                           header.
-
-        Returns: \n
-            {tuple} -- collection of QStandardItems with supplied converted data
-        """
-        label = self.get_label(field)
-        for item in self.funcs:
-            if field in item: break
-        converted_data = self.convert_data(data,self.funcs[item]-1)
-        label_item = map(self.transform,[label,converted_data])
-        return tuple(label_item)
+        label_item = self.get_label(field)
+        data_item = self.convert_data(field,data)
+        return (label_item, data_item)
 
     def transform(self,data):
         item = QStandardItem(data)
         item.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
         return item
 
-
-    def convert_data(self,data,idx):
-        func_lst = [self.convert_const, self.convert_bytes,
-                    self.convert_duration, self.convert_bps,
-                    self.convert_time, self.convert_isotime,
-                    self.convert_ratio, self.convert_delta]
-        return func_lst[idx-1](data)
+    def convert_data(self,field,data):
+        idx = self.fields[field]["conv"]
+        func = self.funcs[idx]
+        serialized_data = func(data)
+        data_item = self.transform(serialized_data)
+        return data_item
 
     def get_label(self,field):
-        return self.labels[field]
+        label = self.fields[field]["label"]
+        label_item = self.transform(label)
+        return label_item
 
     def convert_duration(self,data):
         now = datetime.now()
@@ -130,6 +111,7 @@ class ItemFactory:
         return str(round(data,5))
 
     def convert_delta(self,data):
+        data = int(data)
         d = timedelta(seconds=data)
         return str(d)
 

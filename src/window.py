@@ -36,10 +36,13 @@ from PyQt5.QtCore import QRect, QSize, Qt, QMetaObject
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMenu,
                              QMenuBar, QStatusBar, QMainWindow,
-                             QVBoxLayout, QWidget, QSplitter)
+                             QVBoxLayout, QWidget, QSplitter, QAction)
 
-from src.widgets import FancyFont, TreeWidget, SansFont, TableView, ItemModel
+from src.widgets import (FancyFont, TreeWidget, SansFont,
+                         TableView, ItemModel, MenuBar)
 
+class SomeKindOfError(Exception):
+    pass
 
 class Win(QMainWindow):
 
@@ -67,38 +70,50 @@ class Win(QMainWindow):
         self.vSplitter.addWidget(self.staticTable)
         self.vSplitter.addWidget(self.dataTable)
         self.setCentralWidget(self.hSplitter)
-
-        menubar = self.menuBar()
-        menufont = menubar.font()
-        menufont.setPointSize(11)
-        menubar.setFont(menufont)
-        menubar.setObjectName(u"menubar")
-        menubar.setStyleSheet("""background: #000; color: #0cc;
-                              border-bottom: 1px solid #0ff;""")
+        self.menubar = MenuBar(parent=self)
+        self.setMenuBar(self.menubar)
         statusbar = self.statusBar()
         statusbar.setObjectName(u"statusbar")
         statusbar.setStyleSheet("""background: #000; color: #0ff;
-                                border-bottom: 1px solid #0ff;""")
-        self.file_menu = QMenu("File",parent=menubar)
-        self.layout_menu = QMenu("Layout",parent=menubar)
-        self.help_menu = QMenu("Help",parent=menubar)
-
-        self.file_menu.addAction("Print",self.print_something)
-        self.help_menu.addAction("Quit",self.destroy_something)
-
-        menubar.addMenu(self.file_menu)
-        menubar.addMenu(self.help_menu)
+                                border-top: 1px solid #0ff;""")
+        self.file_menu = QMenu("File",parent=self.menubar)
+        self.menubar.addMenu(self.file_menu)
+        exit_action = QAction("Exit",parent=self)
+        self.file_menu.addAction(exit_action)
+        exit_action.triggered.connect(self.exit_window)
         QMetaObject.connectSlotsByName(self)
 
-    def print_something(self):
-        print("I have been clicked")
-
-    def destroy_something(self):
+    def exit_window(self):
         self.destroy()
-        sys.exit(self.exec_())
+        self.session.end_session()
+
+    def add_menus(self):
+        self.data_menu = QMenu("Fields",parent=self.menubar)
+        self.menubar.addMenu(self.data_menu)
+        self.menu_actions = {}
+        for field in self.session.data_fields:
+            action = QAction(field,parent=self)
+            action.setCheckable(True)
+            func = lambda checked,x=field: self.hide_column(x,checked)
+            self.menu_actions[field] = (action,func)
+            self.data_menu.addAction(action)
+            action.triggered.connect(func)
+        return
+
+
+    def hide_column(self,field,checked):
+        for x,key in enumerate(self.dataTable.get_column_keys()):
+            if field == key:
+                if checked:
+                    self.dataTable.hideColumn(x)
+                else:
+                    self.dataTable.showColumn(x)
+                return
+        raise SomeKindOfError
 
     def assign_session(self,session):
         self.session = session
-        self.staticTable.assign(self.session)
-        self.dataTable.assign(self.session)
+        self.staticTable.assign(self.session,self)
+        self.dataTable.assign(self.session,self)
         self.tree.assign(self.session,self.staticTable,self.dataTable)
+        self.add_menus()

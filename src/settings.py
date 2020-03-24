@@ -35,53 +35,51 @@
 import os
 from pathlib import Path
 
-""" User specific details should be filled in below. the example information
-    given below assumes that the user has login credentials stored in system
-    envionment variables.
+"""
+    User specific details should be filled in below. TODO will be to create a GUI menu within app for filling this information in... eventually.
 """
 
-# Local or remote client information should be entered below
+## Local or remote client information should be entered below.
 
-# client name can be any name you want e.g. "home computer", "seedbox" ...
-LOCAL_CLIENT = os.environ["LOCAL1_CLIENT"]
+## Client name can be any name you want e.g. "home computer", "seedbox" ...
+LOCAL_CLIENT = "home"
 
-# the absolute URL to the QBT web ui
-LOCAL_URL = os.environ["LOCAL1"] # default fis "http://127.0.0.1:8080/api/v2"
+## The absolute URL to the client's Web UI.
+LOCAL_URL = "http://127.0.0.1:8080/api/v2" # Default for most clients
 
-# username and password if security options are enable for the client.
-USER = os.environ["USERNAME"]
-PASS = os.environ["PASSWORD"]
-# if Web UI security features are not enabled then assign user and pass to
-# empty strings.  Leaving blank or commenting them out breaks the application
-# for now.
+## Username and password if security options are enable for the client.
+USER = "admin" # default on most clients if applicable
+PASS = ""
+## If Web UI security features are not enabled then assign user and pass to
+## empty strings.
 
 
-# if you would like to track more than one client then repeat the same 4 items
-# from above and make sure to add the variables to the DETAILS map at the
-# bottom of this file
-LOCAL_CLIENT2 = os.environ["LOCAL2_CLIENT"]
-LOCAL_URL2 = os.environ["LOCAL2"]
+## If you would like to track more than one client then repeat the same 4 items
+## from above and make sure to add the variables to the DETAILS map at the
+## bottom of this file.
+LOCAL_CLIENT2 = "optional_client_#2"
+LOCAL_URL2 = ""
 
 REMOTE_CLIENT = "seedbox"
-REMOTE_URL = os.environ["SEEDBOXURL"]
-REMOTE_USER = os.environ["SEED_USER"]
-REMOTE_PASS = os.environ["SEEDBOXPASS"]
+REMOTE_URL = "http://remote.url/api/v2"
+REMOTE_USER = "remote_user"
+REMOTE_PASS = "remote_password"
 
 
 
-# the name of the database file
+## The name of the database file.
 DB_NAME = "qbtdata.db"
 
-# the directory where the database file will live relative to the application's
-# root directory. Default is "./data". Directory must already exist prior to
-# starting the application.
+## The directory where the database file will live relative to the application's
+## root directory. Default is "./data". Directory must already exist prior to
+## starting the application.
 DATA_DIR = "data"
 
-#Setting this to true currently does nothing
-DEBUG = False
+## Setting this to true currently does nothing.
+DEBUG = False  # TODO #
 
 
-# variable map read in by the application
+## Variable map read in by the application.
 DETAILS = {
     LOCAL_CLIENT :{
         "url": LOCAL_URL,
