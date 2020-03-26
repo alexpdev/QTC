@@ -35,6 +35,8 @@ import os
 import json
 from datetime import datetime,timedelta
 from PyQt5.QtGui import QStandardItem
+from PyQt5.QtChart import (QBarSeries, QBarSet, QChart, QValueAxis,
+                            QBarCategoryAxis, QValueAxis, QLineSeries)
 from PyQt5.QtCore import Qt
 
 class ItemFactory:
@@ -117,3 +119,57 @@ class ItemFactory:
 
     def convert_isotime(self,data):
         return str(datetime.fromisoformat(data))
+
+    def convert_stamp(self,timestamp):
+        d = datetime.fromisoformat(timestamp)
+        s = f"{d.month}/{d.day} ({d.hour}:{d.minute})"
+        return s
+
+    def compile_torrent_charts(self,db_rows):
+        line_series = QLineSeries()
+        ul_series = QBarSeries()
+        ratio_series = QBarSeries()
+        seq = []
+        ulset = QBarSet("Uploaded")
+        ratioset = QBarSet("Ratio")
+        ul_top, ratio_top = 0, 0
+        ul_last, skip_count = 0,0
+        for i,row in enumerate(db_rows):
+            ul = row["uploaded"]
+            ratio = row["ratio"]
+            if ul == ul_last and skip_count < 6:
+                skip_count += 1
+                continue
+            skip_count = 0
+            ul_last = ul
+            if ul > ul_top:
+                ul_top = ul
+                ratio_top = ratio
+            line_series.append(i,ul)
+            ulset.append(ul)
+            ratioset.append(ratio)
+            stamp = self.convert_stamp(row["timestamp"])
+            seq.append(stamp)
+        ul_series.append(ulset)
+        ratio_series.append(ratioset)
+        line_chart = self.form_chart(line_series,"Uploaded_Line",seq,ul_top)
+        ul_chart = self.form_chart(ul_series,"Uploaded",seq,ul_top)
+        ratio_chart = self.form_chart(ratio_series,"Ratio",seq,ratio_top)
+        return ul_chart, ratio_chart, line_chart
+
+    def form_chart(self,series,title,cats,top_range):
+        chart = QChart()
+        chart.addSeries(series)
+        chart.setTitle(title)
+        chart.setAnimationOptions(QChart.AllAnimations)
+        xaxis = QBarCategoryAxis()
+        yaxis = QValueAxis()
+        xaxis.append(cats)
+        yaxis.setRange(0,top_range)
+        chart.addAxis(xaxis,Qt.AlignBottom)
+        chart.addAxis(yaxis,Qt.AlignLeft)
+        series.attachAxis(xaxis)
+        series.attachAxis(yaxis)
+        chart.legend().setVisible(True)
+        chart.legend().setAlignment(Qt.AlignBottom)
+        return chart

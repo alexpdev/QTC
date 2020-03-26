@@ -33,10 +33,13 @@
 
 import sys
 from PyQt5.QtCore import QRect, QSize, Qt, QMetaObject
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QPainter
 from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMenu,
                              QMenuBar, QStatusBar, QMainWindow,
-                             QVBoxLayout, QWidget, QSplitter, QAction)
+                             QVBoxLayout, QWidget, QSplitter,
+                             QTabWidget, QAction, QGraphicsWidget)
+
+from PyQt5.QtChart import QChart, QChartView, QScatterSeries
 
 from src.widgets import (FancyFont, TreeWidget, SansFont,
                          TableView, ItemModel, MenuBar)
@@ -50,7 +53,7 @@ class Win(QMainWindow):
     def setup_ui(self):
         self.setWindowTitle("Torrent Companion")
         self.resize(1400, 800)
-        self.setStyleSheet("background : #444; color: #fff;")
+        # self.setStyleSheet("background : #444; color: #fff;")
 
         self.hSplitter = QSplitter()
         self.tree = TreeWidget(parent=self.hSplitter)
@@ -62,18 +65,39 @@ class Win(QMainWindow):
         self.vSplitter = QSplitter(parent=self.tables)
         self.vSplitter.setOrientation(Qt.Vertical)
         self.hLayout.addWidget(self.vSplitter)
-        self.dataTable = TableView(self.vSplitter)
         self.staticTable = TableView(self.vSplitter)
         self.vSplitter.addWidget(self.staticTable)
-        self.vSplitter.addWidget(self.dataTable)
+        self.tabs = QTabWidget(parent=self.vSplitter)
+        self.dataTable = TableView(self.tabs)
+        self.tabs.addTab(self.dataTable,"data")
+        self.vSplitter.addWidget(self.tabs)
+        self.add_chart_tabs()
         self.setCentralWidget(self.hSplitter)
         self.menubar = MenuBar(parent=self)
         self.setMenuBar(self.menubar)
         statusbar = self.statusBar()
         statusbar.setObjectName(u"statusbar")
-        statusbar.setStyleSheet("""background: #000; color: #0ff;
-                                border-top: 1px solid #0ff;""")
+        # statusbar.setStyleSheet("""background: #000; color: #0ff;
+        #                         border-top: 1px solid #0ff;""")
         QMetaObject.connectSlotsByName(self)
+
+    def add_chart_tabs(self):
+        self.ulChart = QChartView(parent=self.tabs)
+        self.ratioChart = QChartView(parent=self.tabs)
+        self.lineChart = QChartView(parent=self.tabs)
+        self.ulChart.setRenderHint(QPainter.Antialiasing)
+        self.ratioChart.setRenderHint(QPainter.Antialiasing)
+        self.lineChart.setRenderHint(QPainter.Antialiasing)
+        self.tabs.addTab(self.lineChart,"Line Chart")
+        self.tabs.addTab(self.ratioChart,"Ratio Chart")
+        self.tabs.addTab(self.ulChart,"Uploaded Chart")
+        return
+
+    def torrent_charts(self,upload_chart,ratio_chart,line_chart):
+        self.ulChart.setChart(upload_chart)
+        self.ratioChart.setChart(ratio_chart)
+        self.lineChart.setChart(line_chart)
+        return
 
     def exit_window(self):
         self.destroy()
@@ -90,5 +114,5 @@ class Win(QMainWindow):
         self.session = session
         self.staticTable.assign(self.session,self)
         self.dataTable.assign(self.session,self)
-        self.tree.assign(self.session,self.staticTable,self.dataTable)
+        self.tree.assign(self.session,self.staticTable,self.dataTable,self)
         self.menubar.assign(self.session,self.staticTable,self.dataTable,self)

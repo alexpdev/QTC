@@ -61,7 +61,7 @@ def main():
     session = SqlSession(database_path,clients)
     log_thread = Thread(target=storage.log)
     log_thread.start()
-    session.mainloop()
+    session.mainloop(log_thread)
     return 0
 
 if __name__ == "__main__":

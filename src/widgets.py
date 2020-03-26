@@ -33,10 +33,12 @@
 
 import itertools
 
-from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
+from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem, QPainter
 
 from PyQt5.QtWidgets import (QTreeWidget, QTreeWidgetItem, QTableView,
                              QFrame, QMenuBar, QMenu, QAction)
+
+from PyQt5.QtChart import QScatterSeries, QChart, QChartView, QLineSeries
 
 from PyQt5.QtCore import Qt
 
@@ -56,15 +58,15 @@ class MenuBar(QMenuBar):
         font.setPointSize(11)
         font.setBold(True)
         self.setFont(font)
-        self.setStyleSheet("""
-            MenuBar {
-                background: #000;
-                color: #0cc;
-                border-bottom: 1px solid #0ff;
-                }
-            QMenu::item:selected {
-                background-color: #aaa;
-            }""")
+        # self.setStyleSheet("""
+        #     MenuBar {
+        #         background: #000;
+        #         color: #0cc;
+        #         border-bottom: 1px solid #0ff;
+        #         }
+        #     QMenu::item:selected {
+        #         background-color: #aaa;
+        #     }""")
 
     def add_menus(self):
         self.window.add_file_menu()
@@ -102,7 +104,7 @@ class TableView(QTableView):
         super().__init__(parent=parent)
         self.window = parent
         self.setShowGrid(True)
-        self.setStyleSheet("background: #ddd; border: 1px solid #700; gridline-color: #79a392; color: #000;")
+        # self.setStyleSheet("background: #ddd; border: 1px solid #700; gridline-color: #79a392; color: #000;")
         self.checks = []
 
     def assign(self,session,window):
@@ -127,17 +129,17 @@ class TableView(QTableView):
         return
 
 
-
-
 class ItemModel(QStandardItemModel):
     def __init__(self,parent=None):
         super().__init__(parent=None)
         self.view = parent
         self.row_count = 0
         self.flags = (Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+        self.chartView = None
 
     def setSession(self,session):
         self.session = session
+        self.window = session.win
         self.row_map = session.static_fields
         self.col_map = session.data_fields
         return
@@ -160,7 +162,6 @@ class ItemModel(QStandardItemModel):
         first = data[0]
         self.setColumnCount(len(first))
         self.setRowCount(len(data))
-        headers = []
         for x,row in enumerate(data):
             for y,field in enumerate(self.col_map):
                 label,item = self.session.gen_items(field,row[field])
@@ -181,17 +182,19 @@ class ItemModel(QStandardItemModel):
         return True
 
 
+
 class TreeWidget(QTreeWidget):
     def __init__(self,parent=None):
         super().__init__(parent=parent)
         self.parent = parent
         self.css = "background: #ccc; color: #022; border: 2px solid #600;"
-        self.setStyleSheet(self.css)
+        # self.setStyleSheet(self.css)
         self.fancyfont = FancyFont()
         self.sansfont = SansFont()
         self.sansfont.setPointSize(10)
         self.fancyfont.setPointSize(11)
         self.fancyfont.setBold(True)
+        self.last_client = None
         self.setFrameShadow(QFrame.Sunken)
         self.setAlternatingRowColors(True)
         self.setAnimated(True)
@@ -211,10 +214,11 @@ class TreeWidget(QTreeWidget):
                 top_item.addChild(tree_item)
         self.itemSelectionChanged.connect(self.display_info)
 
-    def assign(self,session=None,static=None,table=None):
+    def assign(self,session=None,static=None,table=None,window=None):
         self.session = session
         self.table = table
         self.static = static
+        self.window = window
         self.add_items()
         return
 
@@ -227,7 +231,12 @@ class TreeWidget(QTreeWidget):
         values = self.session.get_static_rows(t_hash,client)
         self.static.manager.receive_static(values)
         self.table.manager.receive_table(db_rows)
+        self.compile_charts(db_rows)
 
+    def compile_charts(self,db_rows):
+        factory = self.session.factory
+        ul,ratio,line = factory.compile_torrent_charts(db_rows)
+        self.window.torrent_charts(ul,ratio,line)
 
 class TreeItem(QTreeWidgetItem):
     def __init__(self,typ):

@@ -32,6 +32,7 @@
 ################################################################################
 
 import sys
+from datetime import datetime
 
 from PyQt5.QtWidgets import QApplication
 
@@ -95,7 +96,22 @@ class SqlSession(QueryMixin,BaseSession):
     def end_session(self):
         sys.exit(self.app.exec_())
 
-    def mainloop(self):
+    def get_client_data(self,client):
+        data = self.select_where("data","client",client)
+        ul_chart,ratio_chart = self.factory.compiledata(data)
+        return ul_chart,ratio_chart
+
+
+
+    def check_log(self):
+        span = datetime.now() - self.logger[1]
+        if span.seconds > 600:
+            self.logger = (self.logger[0],datetime.now())
+            return self.logger[0].start()
+        return
+
+    def mainloop(self,log_thread):
+        self.logger = (log_thread, datetime.now())
         self.app = QApplication(sys.argv)
         self.win = Win()
         self.win.assign_session(self)
