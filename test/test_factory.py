@@ -58,9 +58,9 @@ class TestFactory(TestCase):
         factory = ItemFactory()
         for field in factory.fields.keys():
             item = factory.get_label(field)
-            self.assertIsInstance(item,QStandardItem)
-            self.assertEqual(item.text(),factory.fields[field]["label"])
-            self.assertNotEqual(item.text(),field)
+            self.assertIsInstance(item,str)
+            self.assertEqual(item,factory.fields[field]["label"])
+            self.assertNotEqual(item,field)
 
     def test_factory_converters(self):
         factory = ItemFactory()
@@ -75,11 +75,12 @@ class TestFactory(TestCase):
             "hash" : "abcd1234"
         }
         for k,v in samples.items():
-            items = factory.gen_item(k,v)
-            self.assertTrue(items)
-            self.assertEqual(len(items),2)
-            for item in items:
-                self.assertIsInstance(item,QStandardItem)
+            item = factory.gen_item(k,v)
+            self.assertTrue(item)
+            self.assertIsInstance(item,QStandardItem)
+            self.assertEqual(item.field,k)
+            self.assertEqual(item.value,v)
+
 
 
 

@@ -263,7 +263,7 @@ class StandardItem(QStandardItem):
         self.field = None
 
     def set_label(self,arg):
-        self.display_label = arg
+        self.label = arg
 
     def set_display_value(self,arg):
         self.display_value = arg
@@ -272,7 +272,7 @@ class StandardItem(QStandardItem):
         self.value = arg
 
     def set_field(self,arg):
-        self.label = arg
+        self.field = arg
 
 
 class TreeItem(QTreeWidgetItem):
