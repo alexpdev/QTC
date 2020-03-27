@@ -57,7 +57,7 @@ def main():
     Returns:
         int -- returns 0 on program exit.
     """
-    database_path = BASE_DIR / DATA_DIR / DB_NAME
+    database_path = BASE_DIR / "Qtc" /  DATA_DIR / DB_NAME
     clients = DETAILS
     storage = SqlStorage(database_path,clients)
     session = SqlSession(database_path,clients)

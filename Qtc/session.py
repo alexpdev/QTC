@@ -134,7 +134,7 @@ class SqlSession(QueryMixin,BaseSession):
         self.app = QApplication(sys.argv)
         self.win = Win()
         self.win.assign_session(self)
-        self.app.setWindowIcon(QIcon(BASE_DIR / "icons" / "WinIcon.png"))
+        self.app.setWindowIcon(QIcon(str(BASE_DIR/"Qtc"/"icons"/"WinIcon.png")))
         self.win.show()
         sys.exit(self.app.exec_())
 
