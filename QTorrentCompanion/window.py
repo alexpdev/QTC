@@ -41,7 +41,7 @@ from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMenu,
 
 from PyQt5.QtChart import QChart, QChartView, QScatterSeries
 
-from src.widgets import (FancyFont, TreeWidget, SansFont,
+from QTorrentCompanion.widgets import (FancyFont, TreeWidget, SansFont,
                          TableView, ItemModel, MenuBar)
 
 class Win(QMainWindow):
@@ -60,8 +60,9 @@ class Win(QMainWindow):
         self.tree.setObjectName("Names")
         self.hSplitter.addWidget(self.tree)
         self.tables = QWidget(self.hSplitter)
-        self.hSplitter.addWidget(self.tables)
         self.hLayout = QHBoxLayout(self.tables)
+        self.tables.setLayout(self.hLayout)
+        self.hSplitter.addWidget(self.tables)
         self.vSplitter = QSplitter(parent=self.tables)
         self.vSplitter.setOrientation(Qt.Vertical)
         self.hLayout.addWidget(self.vSplitter)
@@ -70,15 +71,16 @@ class Win(QMainWindow):
         self.tabs = QTabWidget(parent=self.vSplitter)
         self.dataTable = TableView(self.tabs)
         self.tabs.addTab(self.dataTable,"data")
+        self.hSplitter.setStretchFactor(1,4)
+        self.hSplitter.setContentsMargins(10,10,0,10)
         self.vSplitter.addWidget(self.tabs)
+        self.vSplitter.setStretchFactor(1,3)
         self.add_chart_tabs()
         self.setCentralWidget(self.hSplitter)
         self.menubar = MenuBar(parent=self)
         self.setMenuBar(self.menubar)
         statusbar = self.statusBar()
         statusbar.setObjectName(u"statusbar")
-        # statusbar.setStyleSheet("""background: #000; color: #0ff;
-        #                         border-top: 1px solid #0ff;""")
         QMetaObject.connectSlotsByName(self)
 
     def add_chart_tabs(self):
@@ -105,7 +107,11 @@ class Win(QMainWindow):
 
     def add_file_menu(self):
         self.file_menu = QMenu("File",parent=self.menubar)
+        self.view_menu = QMenu("View",parent=self.menubar)
         self.menubar.addMenu(self.file_menu)
+        self.menubar.addMenu(self.view_menu)
+        self.filter_menu = QMenu("Filters",parent=self.menubar)
+        self.view_menu.addMenu(self.filter_menu)
         exit_action = QAction("Exit",parent=self)
         self.file_menu.addAction(exit_action)
         exit_action.triggered.connect(self.exit_window)

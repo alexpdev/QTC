@@ -33,7 +33,7 @@
 import os
 from datetime import datetime
 
-from src.mixins import QueryMixin, RequestMixin, SqlConnect
+from QTorrentCompanion.mixins import QueryMixin, RequestMixin, SqlConnect
 
 class BaseStorage(RequestMixin):
 

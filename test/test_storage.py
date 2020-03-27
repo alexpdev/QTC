@@ -41,7 +41,7 @@ try:
 except:
     from test.testsettings import DETAILS,DB_NAME,DATA_DIR
 
-from src.storage import BaseStorage, SqlStorage
+from QTorrentCompanion.storage import BaseStorage, SqlStorage
 
 
 class TestStorage(TestCase):

@@ -35,6 +35,7 @@ import os
 import json
 from datetime import datetime,timedelta
 from PyQt5.QtGui import QStandardItem
+from QTorrentCompanion.widgets import StandardItem
 from PyQt5.QtChart import (QBarSeries, QBarSet, QChart, QValueAxis,
                             QBarCategoryAxis, QValueAxis, QLineSeries)
 from PyQt5.QtCore import Qt
@@ -60,26 +61,29 @@ class ItemFactory:
                       6 : self.convert_ratio,    7 : self.convert_delta}
 
     def gen_item(self,field,data):
-        label_item = self.get_label(field)
-        data_item = self.convert_data(field,data)
-        return (label_item, data_item)
+        item = self.convert_data(field,data)
+        return item
 
-    def transform(self,data):
-        item = QStandardItem(data)
+    def transform(self,field,data,display_data,label):
+        item = StandardItem(display_data)
+        item.set_value(data)
+        item.set_field(field)
+        item.set_label(label)
+        item.set_display_value(display_data)
         item.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
         return item
 
     def convert_data(self,field,data):
+        label = self.get_label(field)
         idx = self.fields[field]["conv"]
         func = self.funcs[idx]
-        serialized_data = func(data)
-        data_item = self.transform(serialized_data)
+        display_data = func(data)
+        data_item = self.transform(field,data,display_data,label)
         return data_item
 
     def get_label(self,field):
         label = self.fields[field]["label"]
-        label_item = self.transform(label)
-        return label_item
+        return label
 
     def convert_duration(self,data):
         now = datetime.now()
@@ -126,50 +130,67 @@ class ItemFactory:
         return s
 
     def compile_torrent_charts(self,db_rows):
+
         line_series = QLineSeries()
         ul_series = QBarSeries()
         ratio_series = QBarSeries()
         seq = []
+
         ulset = QBarSet("Uploaded")
         ratioset = QBarSet("Ratio")
+
         ul_top, ratio_top = 0, 0
         ul_last, skip_count = 0,0
         for i,row in enumerate(db_rows):
             ul = row["uploaded"]
             ratio = row["ratio"]
+
             if ul == ul_last and skip_count < 6:
                 skip_count += 1
                 continue
+
             skip_count = 0
             ul_last = ul
             if ul > ul_top:
                 ul_top = ul
                 ratio_top = ratio
+
             line_series.append(i,ul)
             ulset.append(ul)
             ratioset.append(ratio)
+
             stamp = self.convert_stamp(row["timestamp"])
             seq.append(stamp)
+
         ul_series.append(ulset)
         ratio_series.append(ratioset)
+
         line_chart = self.form_chart(line_series,"Uploaded_Line",seq,ul_top)
         ul_chart = self.form_chart(ul_series,"Uploaded",seq,ul_top)
         ratio_chart = self.form_chart(ratio_series,"Ratio",seq,ratio_top)
+
         return ul_chart, ratio_chart, line_chart
 
     def form_chart(self,series,title,cats,top_range):
+
         chart = QChart()
         chart.addSeries(series)
         chart.setTitle(title)
         chart.setAnimationOptions(QChart.AllAnimations)
+
         xaxis = QBarCategoryAxis()
         yaxis = QValueAxis()
+
         xaxis.append(cats)
         yaxis.setRange(0,top_range)
+
         chart.addAxis(xaxis,Qt.AlignBottom)
         chart.addAxis(yaxis,Qt.AlignLeft)
+
         series.attachAxis(xaxis)
         series.attachAxis(yaxis)
+
         chart.legend().setVisible(True)
         chart.legend().setAlignment(Qt.AlignBottom)
+
         return chart

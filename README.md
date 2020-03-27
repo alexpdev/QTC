@@ -15,7 +15,7 @@ QTorrentCompanion is a small GUI program for viewing, and comparing statistics g
 - This project is still in the early stages of development.
 
 **Instructions**
-* Modify the `settings.py` file located in the `src` directory with your client information
+* Modify the `settings.py` file located in the `QTorrentCompanion` directory with your client information
 * Ensure you have _Pythonv3.*_ and all required packages installed in the `requirements.txt` file.
 * run `python bin\QTorrentCompanion.py` from commandline
 

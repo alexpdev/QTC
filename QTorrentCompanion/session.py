@@ -35,10 +35,11 @@ import sys
 from datetime import datetime
 
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QIcon
 
-from src.mixins import QueryMixin, SqlConnect
-from src.factory import ItemFactory
-from src.window import Win
+from QTorrentCompanion.mixins import QueryMixin, SqlConnect
+from QTorrentCompanion.factory import ItemFactory
+from QTorrentCompanion.window import Win
 
 
 class BaseSession:
@@ -68,8 +69,12 @@ class SqlSession(QueryMixin,BaseSession):
         self.factory = ItemFactory()
 
     def gen_items(self,field,data):
-        items = self.factory.gen_item(field,data)
-        return items
+        item = self.factory.gen_item(field,data)
+        return item
+
+    def get_headers(self,fields):
+        headers = [self.factory.get_label(i) for i in fields]
+        return headers
 
     def get_client_names(self):
         names = [i for i in self.clients]
@@ -79,6 +84,7 @@ class SqlSession(QueryMixin,BaseSession):
         table = "static"
         field = "client"
         rows = self.select_where(table,field,client)
+        rows = sorted(rows,key=lambda x: x["name"])
         for row in rows:
             v = (row["name"],row["hash"],row["client"])
             yield v
@@ -101,7 +107,19 @@ class SqlSession(QueryMixin,BaseSession):
         ul_chart,ratio_chart = self.factory.compiledata(data)
         return ul_chart,ratio_chart
 
+    def get_active_hashes(self):
+        """ Query Database for latest timestamp and return related hashes """
+        stamps = self.select_rows("stamps")
+        now,min_time,timestamp = datetime.now(),None,None
+        for row in stamps:
+            logged = datetime.fromisoformat(row["timestamp"])
 
+            if not timestamp or now - logged < min_time:
+                timestamp = row["timestamp"]
+                min_time = now - logged
+
+        rows = self.select_where("data","timestamp",timestamp)
+        return [i["hash"] for i in rows]
 
     def check_log(self):
         span = datetime.now() - self.logger[1]
@@ -110,11 +128,13 @@ class SqlSession(QueryMixin,BaseSession):
             return self.logger[0].start()
         return
 
-    def mainloop(self,log_thread):
+    def mainloop(self,log_thread,BASE_DIR):
+        self.Base_Dir = BASE_DIR
         self.logger = (log_thread, datetime.now())
         self.app = QApplication(sys.argv)
         self.win = Win()
         self.win.assign_session(self)
+        self.app.setWindowIcon(QIcon(BASE_DIR / "icons" / "WinIcon.png"))
         self.win.show()
         sys.exit(self.app.exec_())
 

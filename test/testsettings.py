@@ -40,7 +40,7 @@ BASE_DIR = SETTINGS_FILE.parents[1]
 
 # path to data directory for testing purposes
 # This should not be the same as the main applications data_dir
-DATA_DIR = BASE_DIR / "temp" / "db"
+DATA_DIR = BASE_DIR / "test" / "db"
 
 # Name of database file
 DB_NAME = "qbtdata.db"

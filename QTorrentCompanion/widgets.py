@@ -42,7 +42,6 @@ from PyQt5.QtChart import QScatterSeries, QChart, QChartView, QLineSeries
 
 from PyQt5.QtCore import Qt
 
-from src.factory import ItemFactory
 
 
 class SomeKindOfError(Exception):
@@ -54,22 +53,11 @@ class MenuBar(QMenuBar):
         super().__init__(parent=parent)
         self.window = parent
         self.setObjectName(u"menubar")
-        font = SansFont()
-        font.setPointSize(11)
-        font.setBold(True)
-        self.setFont(font)
-        # self.setStyleSheet("""
-        #     MenuBar {
-        #         background: #000;
-        #         color: #0cc;
-        #         border-bottom: 1px solid #0ff;
-        #         }
-        #     QMenu::item:selected {
-        #         background-color: #aaa;
-        #     }""")
+        self.active_hashes = []
+        self.tree_items = []
 
     def add_menus(self):
-        self.window.add_file_menu()
+        self.add_file_menu()
         self.columnsMenu = QMenu("Columns",parent=self)
         self.addMenu(self.columnsMenu)
         for field in self.dataTable.get_columns():
@@ -98,13 +86,49 @@ class MenuBar(QMenuBar):
             self.dataTable.showColumn(idx)
         return
 
+    def add_file_menu(self):
+        self.file_menu = QMenu("File",parent=self)
+        self.addMenu(self.file_menu)
+        exit_action = QAction("Exit",parent=self.window)
+        self.file_menu.addAction(exit_action)
+        exit_action.triggered.connect(self.window.exit_window)
+        self.add_filters_menu()
+
+    def add_filters_menu(self):
+        self.view_menu = QMenu("View",parent=self)
+        self.addMenu(self.view_menu)
+        self.filter_menu = QMenu("Filters",parent=self)
+        self.view_menu.addMenu(self.filter_menu)
+        filterActive = QAction("Active Only",parent=self.window)
+        self.filter_menu.addAction(filterActive)
+        filterActive.setCheckable(True)
+        func = lambda x: self.filter_active_torrents(x)
+        filterActive.triggered.connect(func)
+
+
+    def filter_active_torrents(self,x=True):
+        if not x:
+            if not self.active_hashes: return
+            for item in self.tree_items:
+                item.setHidden(False)
+        elif not self.tree_items:
+            self.active_hashes = self.session.get_active_hashes()
+            for i in range(self.window.tree.topLevelItemCount()):
+                item = self.window.tree.topLevelItem(i)
+                for j in range(item.childCount()):
+                    childItem = item.child(j)
+                    if childItem.t_hash not in self.active_hashes:
+                        childItem.setHidden(True)
+                        self.tree_items.append(childItem)
+        else:
+            for item in self.tree_items:
+                item.setHidden(True)
 
 class TableView(QTableView):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.window = parent
         self.setShowGrid(True)
-        # self.setStyleSheet("background: #ddd; border: 1px solid #700; gridline-color: #79a392; color: #000;")
         self.checks = []
 
     def assign(self,session,window):
@@ -147,12 +171,13 @@ class ItemModel(QStandardItemModel):
     def receive_static(self,data):
         self.isEmpty()
         row = data[0]
-        self.setColumnCount(2)
+        self.setColumnCount(1)
         self.setRowCount(len(row))
+        headers = self.session.get_headers(self.row_map)
+        self.setVerticalHeaderLabels(headers)
         for field in self.row_map:
-            label,item = self.session.gen_items(field,row[field])
-            self.setItem(self.row_count,0,label)
-            self.setItem(self.row_count,1,item)
+            item = self.session.gen_items(field,row[field])
+            self.setItem(self.row_count,0,item)
             self.row_count += 1
         self.view.resizeColumnsToContents()
         return
@@ -162,11 +187,11 @@ class ItemModel(QStandardItemModel):
         first = data[0]
         self.setColumnCount(len(first))
         self.setRowCount(len(data))
+        headers = self.session.get_headers(self.col_map)
+        self.setHorizontalHeaderLabels(headers)
         for x,row in enumerate(data):
             for y,field in enumerate(self.col_map):
-                label,item = self.session.gen_items(field,row[field])
-                if x == 0:
-                    self.setHorizontalHeaderItem(y,label)
+                item = self.session.gen_items(field,row[field])
                 self.setItem(x,y,item)
             self.row_count += 1
         self.view.check_menus()
@@ -186,31 +211,21 @@ class ItemModel(QStandardItemModel):
 class TreeWidget(QTreeWidget):
     def __init__(self,parent=None):
         super().__init__(parent=parent)
-        self.parent = parent
-        self.css = "background: #ccc; color: #022; border: 2px solid #600;"
-        # self.setStyleSheet(self.css)
-        self.fancyfont = FancyFont()
-        self.sansfont = SansFont()
-        self.sansfont.setPointSize(10)
-        self.fancyfont.setPointSize(11)
-        self.fancyfont.setBold(True)
-        self.last_client = None
-        self.setFrameShadow(QFrame.Sunken)
         self.setAlternatingRowColors(True)
         self.setAnimated(True)
+        self.setStyleSheet("margin-top: 10px; margin-bottom: 10px;")
+        self.setIndentation(18)
         self.setUniformRowHeights(True)
         self.setHeaderHidden(True)
-        self.setIndentation(4)
-        self.setFont(self.fancyfont)
         self.setColumnCount(1)
 
     def add_items(self):
         for client in self.session.get_client_names():
             top_item = TreeItem.createTop(0,client)
             self.addTopLevelItem(top_item)
+
             for vals in self.session.get_torrent_names(client):
                 tree_item = TreeItem.create(0,*vals)
-                tree_item.setFont(0,self.fancyfont)
                 top_item.addChild(tree_item)
         self.itemSelectionChanged.connect(self.display_info)
 
@@ -237,6 +252,28 @@ class TreeWidget(QTreeWidget):
         factory = self.session.factory
         ul,ratio,line = factory.compile_torrent_charts(db_rows)
         self.window.torrent_charts(ul,ratio,line)
+
+
+class StandardItem(QStandardItem):
+    def __init__(self,txt):
+        super().__init__(txt)
+        self.display_value = txt
+        self.value = None
+        self.label = None
+        self.field = None
+
+    def set_label(self,arg):
+        self.display_label = arg
+
+    def set_display_value(self,arg):
+        self.display_value = arg
+
+    def set_value(self,arg):
+        self.value = arg
+
+    def set_field(self,arg):
+        self.label = arg
+
 
 class TreeItem(QTreeWidgetItem):
     def __init__(self,typ):

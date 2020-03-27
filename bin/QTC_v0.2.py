@@ -40,17 +40,17 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 BASE_DIR = Path(BASE_DIR)
 try:
-    from src.__settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
+    from QTorrentCompanion.__settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
 except:
-    from src.settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
+    from QTorrentCompanion.settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
 
 
-from src.storage import SqlStorage
-from src.session import SqlSession
+from QTorrentCompanion.storage import SqlStorage
+from QTorrentCompanion.session import SqlSession
 
 
 def main():
-    """ Esecute main program.
+    """ Execute main program.
 
     Returns:
         int -- returns 0 on program exit.
@@ -61,7 +61,7 @@ def main():
     session = SqlSession(database_path,clients)
     log_thread = Thread(target=storage.log)
     log_thread.start()
-    session.mainloop(log_thread)
+    session.mainloop(log_thread,BASE_DIR)
     return 0
 
 if __name__ == "__main__":

@@ -39,9 +39,9 @@ try:
 except:
     from test.testsettings import DETAILS,DB_NAME,DATA_DIR
 
-from src.session import SqlSession
+from QTorrentCompanion.session import SqlSession
 
-from src.storage import SqlStorage,BaseStorage
+from QTorrentCompanion.storage import SqlStorage,BaseStorage
 
 class TestOthers(TestCase):
     @classmethod

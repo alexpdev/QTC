@@ -41,7 +41,7 @@ try:
 except:
     from test.testsettings import DETAILS,DB_NAME,DATA_DIR
 
-from src.factory import ItemFactory
+from QTorrentCompanion.factory import ItemFactory
 
 from PyQt5.QtGui import QStandardItem
 

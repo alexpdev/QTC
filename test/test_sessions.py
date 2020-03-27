@@ -39,8 +39,8 @@ try:
 except:
     from test.testsettings import DETAILS,DB_NAME,DATA_DIR
 
-from src.session import BaseSession,SqlSession
-from src.storage import SqlStorage
+from QTorrentCompanion.session import BaseSession,SqlSession
+from QTorrentCompanion.storage import SqlStorage
 
 
 class TestSession(TestCase):
@@ -91,3 +91,14 @@ class TestSession(TestCase):
                 self.assertIsInstance(tr_name,str)
                 self.assertIsInstance(tr_hash,str)
                 self.assertIsInstance(tr_client,str)
+
+    def test_get_active_hashes(self):
+        session = SqlSession(self.path,self.clients)
+        storage = SqlStorage(self.path,self.clients)
+        storage.log()
+        lst = session.get_active_hashes()
+        self.assertTrue(lst)
+        for i in lst:
+            self.assertIsInstance(i,str)
+
+
