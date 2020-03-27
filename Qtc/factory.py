@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-## QTorrentCompanion v0.2
+## Qtc v0.2
 ##
-## This code written for the "QTorrentCompanion" program
+## This code written for the "Qtc" program
 ##
 ## This project is licensed with:
 ## GNU AFFERO GENERAL PUBLIC LICENSE
@@ -35,7 +35,7 @@ import os
 import json
 from datetime import datetime,timedelta
 from PyQt5.QtGui import QStandardItem
-from QTorrentCompanion.widgets import StandardItem
+from Qtc.widgets import StandardItem
 from PyQt5.QtChart import (QBarSeries, QBarSet, QChart, QValueAxis,
                             QBarCategoryAxis, QValueAxis, QLineSeries)
 from PyQt5.QtCore import Qt

@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-## QTorrentCompanion v0.2
+## Qtc v0.2
 ##
-## This code written for the "QTorrentCompanion" program
+## This code written for the "Qtc" program
 ##
 ## This project is licensed with:
 ## GNU AFFERO GENERAL PUBLIC LICENSE
@@ -41,7 +41,7 @@ try:
 except:
     from test.testsettings import DETAILS,DB_NAME,DATA_DIR
 
-from QTorrentCompanion.factory import ItemFactory
+from Qtc.factory import ItemFactory
 
 from PyQt5.QtGui import QStandardItem
 

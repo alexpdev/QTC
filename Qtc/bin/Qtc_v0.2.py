@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-## QTorrentCompanion v0.2
+## Qtc v0.2
 ##
-## This code written for the "QTorrentCompanion" program
+## This code written for the "Qtc" program
 ##
 ## This project is licensed with:
 ## GNU AFFERO GENERAL PUBLIC LICENSE
@@ -36,17 +36,19 @@ import os
 from pathlib import Path
 from threading import Thread
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+dirname = lambda x: os.path.dirname(x)
+here = dirname(os.path.abspath(__file__))
+BASE_DIR = dirname(dirname(here))
 sys.path.append(BASE_DIR)
 BASE_DIR = Path(BASE_DIR)
 try:
-    from QTorrentCompanion.__settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
+    from Qtc.__settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
 except:
-    from QTorrentCompanion.settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
+    from Qtc.settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
 
 
-from QTorrentCompanion.storage import SqlStorage
-from QTorrentCompanion.session import SqlSession
+from Qtc.storage import SqlStorage
+from Qtc.session import SqlSession
 
 
 def main():

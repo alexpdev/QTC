@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-## QTorrentCompanion v0.2
+## Qtc v0.2
 ##
-## This code written for the "QTorrentCompanion" program
+## This code written for the "Qtc" program
 ##
 ## This project is licensed with:
 ## GNU AFFERO GENERAL PUBLIC LICENSE
@@ -41,7 +41,7 @@ from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMenu,
 
 from PyQt5.QtChart import QChart, QChartView, QScatterSeries
 
-from QTorrentCompanion.widgets import (FancyFont, TreeWidget, SansFont,
+from Qtc.widgets import (FancyFont, TreeWidget, SansFont,
                          TableView, ItemModel, MenuBar)
 
 class Win(QMainWindow):

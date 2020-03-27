@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-## QTorrentCompanion v0.2
+## Qtc v0.2
 ##
-## This code written for the "QTorrentCompanion" program
+## This code written for the "Qtc" program
 ##
 ## This project is licensed with:
 ## GNU AFFERO GENERAL PUBLIC LICENSE
@@ -37,9 +37,9 @@ from datetime import datetime
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 
-from QTorrentCompanion.mixins import QueryMixin, SqlConnect
-from QTorrentCompanion.factory import ItemFactory
-from QTorrentCompanion.window import Win
+from Qtc.mixins import QueryMixin, SqlConnect
+from Qtc.factory import ItemFactory
+from Qtc.window import Win
 
 
 class BaseSession:

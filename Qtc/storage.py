@@ -4,9 +4,9 @@
 ################################################################################
 ######
 ###
-## QTorrentCompanion v0.2
+## Qtc v0.2
 ##
-## This code written for the "QTorrentCompanion" program
+## This code written for the "Qtc" program
 ##
 ## This project is licensed with:
 ## GNU AFFERO GENERAL PUBLIC LICENSE
@@ -33,7 +33,7 @@
 import os
 from datetime import datetime
 
-from QTorrentCompanion.mixins import QueryMixin, RequestMixin, SqlConnect
+from Qtc.mixins import QueryMixin, RequestMixin, SqlConnect
 
 class BaseStorage(RequestMixin):
 
