@@ -9,7 +9,7 @@ README = open(os.path.join(here, 'README.md')).read()
 start_script = Path(here) / "bin" / "Qtc_v0.2.py"
 
 setup(
-    name="QBittorrentCompanion",
+    name="Qtcomp",
     version=version,
     packages=find_packages(),
     author="AlexPdev",
@@ -20,7 +20,7 @@ setup(
     license='AGPLv3.0',
     install_requires=requirements,
     zip_safe=False,
-    entry_points={'console_scripts':['QBT=QBT.']},
+    entry_points={'console_scripts':['Qtc=Qtc.bin.Qtc_:main']},
     include_package_data=True,
     python_requires="~=3.*",
 )
