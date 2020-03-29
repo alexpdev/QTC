@@ -37,13 +37,13 @@ from unittest import TestCase
 from datetime import datetime,timedelta
 sys.path.append(os.getcwd())
 try:
-    from test.test_pydenv import pydenv
+    from tests.test_pydenv import pydenv
     pydenv()
-    from test._testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests._testsettings import DETAILS,DB_NAME,DATA_DIR
 except:
-    from test.testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests.testsettings import DETAILS,DB_NAME,DATA_DIR
 
-from Qtc.factory import ItemFactory
+from qtc.factory import ItemFactory
 
 from PyQt5.QtGui import QStandardItem
 

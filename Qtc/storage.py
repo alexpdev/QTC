@@ -33,7 +33,7 @@
 import os
 from datetime import datetime
 
-from Qtc.mixins import QueryMixin, RequestMixin, SqlConnect
+from qtc.mixins import QueryMixin, RequestMixin, SqlConnect
 
 class BaseStorage(RequestMixin):
 

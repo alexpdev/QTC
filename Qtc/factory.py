@@ -35,10 +35,10 @@ import os
 import json
 from datetime import datetime,timedelta
 from PyQt5.QtGui import QStandardItem
-from Qtc.widgets import StandardItem
 from PyQt5.QtChart import (QBarSeries, QBarSet, QChart, QValueAxis,
                             QBarCategoryAxis, QValueAxis, QLineSeries)
 from PyQt5.QtCore import Qt
+from qtc.widgets import StandardItem
 
 class ItemFactory:
 

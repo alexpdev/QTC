@@ -35,14 +35,14 @@ import sys
 from unittest import TestCase
 sys.path.append(os.getcwd())
 try:
-    from test.test_pydenv import pydenv
+    from tests.test_pydenv import pydenv
     pydenv()
-    from test._testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests._testsettings import DETAILS,DB_NAME,DATA_DIR
 except:
-    from test.testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests.testsettings import DETAILS,DB_NAME,DATA_DIR
 
-from Qtc.session import BaseSession,SqlSession
-from Qtc.storage import SqlStorage
+from qtc.session import BaseSession,SqlSession
+from qtc.storage import SqlStorage
 
 
 class TestSession(TestCase):
@@ -86,13 +86,6 @@ class TestSession(TestCase):
         for client in session.clients:
             names = session.get_torrent_names(client)
             self.assertTrue(names)
-            for name in names:
-                self.assertEqual(len(name),3)
-                self.assertIn(client,name)
-                tr_name,tr_hash,tr_client = name
-                self.assertIsInstance(tr_name,str)
-                self.assertIsInstance(tr_hash,str)
-                self.assertIsInstance(tr_client,str)
 
     def test_get_active_hashes(self):
         session = SqlSession(self.path,self.clients)

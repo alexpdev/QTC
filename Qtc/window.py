@@ -41,7 +41,7 @@ from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMenu,
 
 from PyQt5.QtChart import QChart, QChartView, QScatterSeries
 
-from Qtc.widgets import (FancyFont, TreeWidget, SansFont,
+from qtc.widgets import (FancyFont, TreeWidget, SansFont,
                          TableView, ItemModel, MenuBar)
 
 class Win(QMainWindow):

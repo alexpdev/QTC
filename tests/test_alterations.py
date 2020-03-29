@@ -35,15 +35,15 @@ import sys
 from unittest import TestCase
 sys.path.append(os.getcwd())
 try:
-    from test.test_pydenv import pydenv
+    from tests.test_pydenv import pydenv
     pydenv()
-    from test._testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests._testsettings import DETAILS,DB_NAME,DATA_DIR
 except:
-    from test.testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests.testsettings import DETAILS,DB_NAME,DATA_DIR
 
-from Qtc.session import SqlSession
+from qtc.session import SqlSession
 
-from Qtc.storage import SqlStorage,BaseStorage
+from qtc.storage import SqlStorage,BaseStorage
 
 class TestOthers(TestCase):
     @classmethod
@@ -63,25 +63,6 @@ class TestOthers(TestCase):
         if os.path.isfile(db):
             os.remove(db)
 
-    def test_session_queries(self):
-        session = SqlSession(self.path,self.clients)
-        self.assertTrue(session)
-        for client in session.clients:
-            info = session.get_torrent_names(client)
-            with self.subTest(i=client):
-                self.assertTrue(info)
-                self.assertIn(client,self.clients)
-            hashes,names,client = [],[],[]
-            for i in info:
-                hashes.append(i[1])
-                names.append(i[0])
-                client.append(i[2])
-            for t_hash in hashes:
-                rows = session.get_static_rows(t_hash,client)
-                self.assertTrue(rows)
-                for row in rows:
-                    with self.subTest(i=t_hash):
-                        self.assertIn(t_hash,row["hash"])
 
     def test_db_data_changes(self):
         storage = SqlStorage(self.path,self.clients)

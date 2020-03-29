@@ -43,15 +43,15 @@ sys.path.append(BASE_DIR)
 BASE_DIR = Path(BASE_DIR)
 
 try:
-    from pydenv import pydenv
+    from qtc.bin.pydenv import pydenv
     pydenv()
-    from Qtc.__settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
+    from qtc.__settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
 except:
-    from Qtc.settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
+    from qtc.settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
 
 
-from Qtc.storage import SqlStorage
-from Qtc.session import SqlSession
+from qtc.storage import SqlStorage
+from qtc.session import SqlSession
 
 
 def main():

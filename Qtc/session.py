@@ -37,9 +37,9 @@ from datetime import datetime
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 
-from Qtc.mixins import QueryMixin, SqlConnect
-from Qtc.factory import ItemFactory
-from Qtc.window import Win
+from qtc.mixins import QueryMixin, SqlConnect
+from qtc.factory import ItemFactory
+from qtc.window import Win
 
 
 class BaseSession:
