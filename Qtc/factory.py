@@ -61,6 +61,11 @@ class ItemFactory:
                       6 : self.convert_ratio,    7 : self.convert_delta}
 
     def gen_item(self,field,data):
+        """ StandardItem factory function.
+
+            Takes Item's Header label and corresponding data.
+            Returns QStandardItem for TableView.
+        """
         item = self.convert_data(field,data)
         return item
 
@@ -74,6 +79,8 @@ class ItemFactory:
         return item
 
     def convert_data(self,field,data):
+        """ Function for converting raw data into more readable format. """
+
         label = self.get_label(field)
         idx = self.fields[field]["conv"]
         func = self.funcs[idx]
@@ -82,15 +89,18 @@ class ItemFactory:
         return data_item
 
     def get_label(self,field):
+        """ Formats the db field to title case for table headers """
         label = self.fields[field]["label"]
         return label
 
     def convert_duration(self,data):
+        """ Changes a datetime.timestamp integer to human readable format """
         now = datetime.now()
         d = datetime.fromtimestamp(data)
         return str(abs(now - d))
 
     def convert_bytes(self,data):
+        """ Formats bytes to appropriate order of magnitude. e.g. GB MB. """
         val = data
         if val > 1_000_000_000:
             nval = str(round(val / 1_000_000_000,2))+"GB"
@@ -130,46 +140,62 @@ class ItemFactory:
         return s
 
     def compile_torrent_charts(self,db_rows):
+        """ Factory method for generating charts.
 
+            Input -> All database rows for a single torrent.
+            Output -> Line and Bar Charts for Ratio and Upload.
+        """
         line_series = QLineSeries()
         ul_series = QBarSeries()
         ratio_series = QBarSeries()
-        seq = []
-
         ulset = QBarSet("Uploaded")
         ratioset = QBarSet("Ratio")
 
+        """ Generate empty bar and line charts for data series.
+        """
+
+        seq = []
         ul_top, ratio_top = 0, 0
         ul_last, skip_count = 0,0
         for i,row in enumerate(db_rows):
             ul = row["uploaded"]
             ratio = row["ratio"]
 
+            """ Compare current iteration to previous and skip if values
+                most of the measured values are identical to avoid clutter.
+            """
             if ul == ul_last and skip_count < 6:
                 skip_count += 1
                 continue
-
             skip_count = 0
             ul_last = ul
             if ul > ul_top:
-                ul_top = ul
-                ratio_top = ratio
-
-            line_series.append(i,ul)
+                ul_top, ratio_top = ul, ratio
             ulset.append(ul)
             ratioset.append(ratio)
 
+            """ Change IsoFormatted time into a more compact datetime format
+            """
             stamp = self.convert_stamp(row["timestamp"])
             seq.append(stamp)
-
         ul_series.append(ulset)
         ratio_series.append(ratioset)
-
-        line_chart = self.form_chart(line_series,"Uploaded_Line",seq,ul_top)
+        line_chart = self.get_diff_chart(line_series,db_rows)
         ul_chart = self.form_chart(ul_series,"Uploaded",seq,ul_top)
         ratio_chart = self.form_chart(ratio_series,"Ratio",seq,ratio_top)
-
         return ul_chart, ratio_chart, line_chart
+
+    def get_diff_chart(self,line_series,db_rows):
+        top_val,counter,seq = 0,0,[]
+        for diff in self.calculate_diffs(db_rows):
+            stamp,ul,ratio = diff
+            line_series.append(counter,ul)
+            seq.append(str(stamp))
+            if ul > top_val:
+                top_val = ul
+            counter += 1
+        return self.form_chart(line_series,"Daily Upload",seq,top_val)
+
 
     def form_chart(self,series,title,cats,top_range):
 
@@ -194,3 +220,21 @@ class ItemFactory:
         chart.legend().setAlignment(Qt.AlignBottom)
 
         return chart
+
+
+    def calculate_diffs(self,rows):
+        iso = lambda x: datetime.fromisoformat(x["timestamp"])
+        rowsSrted = sorted(rows,key=iso)
+
+        diffs,last_stamp,last_ul,last_ratio = [],None,None,None
+        for row in rowsSrted:
+            stamp = iso(row)
+            ratio,ul = row["ratio"],row["uploaded"]
+
+            if last_stamp:
+                timediff = abs(stamp - last_stamp)
+                uldiff = abs(ul - last_ul)
+                ratiodiff = abs(ratio - last_ratio)
+                yield (timediff, uldiff, ratiodiff)
+            last_stamp, last_ul, last_ratio = stamp, ul, ratio
+        return diffs

@@ -35,6 +35,8 @@ import sys
 from unittest import TestCase
 sys.path.append(os.getcwd())
 try:
+    from test.test_pydenv import pydenv
+    pydenv()
     from test._testsettings import DETAILS,DB_NAME,DATA_DIR
 except:
     from test.testsettings import DETAILS,DB_NAME,DATA_DIR
@@ -79,7 +81,7 @@ class TestOthers(TestCase):
                 self.assertTrue(rows)
                 for row in rows:
                     with self.subTest(i=t_hash):
-                        self.assertIn(("Hash",t_hash),row)
+                        self.assertIn(t_hash,row["hash"])
 
     def test_db_data_changes(self):
         storage = SqlStorage(self.path,self.clients)

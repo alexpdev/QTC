@@ -35,6 +35,8 @@ import sys
 from unittest import TestCase
 sys.path.append(os.getcwd())
 try:
+    from test.test_pydenv import pydenv
+    pydenv()
     from test._testsettings import DETAILS,DB_NAME,DATA_DIR
 except:
     from test.testsettings import DETAILS,DB_NAME,DATA_DIR

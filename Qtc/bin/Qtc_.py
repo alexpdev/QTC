@@ -41,7 +41,10 @@ here = dirname(os.path.abspath(__file__))
 BASE_DIR = dirname(dirname(here))
 sys.path.append(BASE_DIR)
 BASE_DIR = Path(BASE_DIR)
+
 try:
+    from pydenv import pydenv
+    pydenv()
     from Qtc.__settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)
 except:
     from Qtc.settings import (DATA_DIR, DB_NAME, DETAILS, DEBUG)

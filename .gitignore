@@ -107,6 +107,8 @@ celerybeat-schedule
 
 # dotenv
 .env
+pydenv.py
+test_pydenv.py
 
 # virtualenv
 .venv
