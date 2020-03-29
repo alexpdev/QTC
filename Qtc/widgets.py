@@ -56,8 +56,20 @@ class MenuBar(QMenuBar):
         self.active_hashes = []
         self.tree_items = []
 
+    def assign(self,session,staticTable,dataTable,win):
+        self.session = session
+        self.staticTable = staticTable
+        self.dataTable = dataTable
+        self.window = win
+        self.add_menus()
+
     def add_menus(self):
         self.add_file_menu()
+        self.add_filters_menu()
+        self.add_columns_menu()
+        self.add_sort_menu()
+
+    def add_columns_menu(self):
         self.columnsMenu = QMenu("Columns",parent=self)
         self.addMenu(self.columnsMenu)
         for field in self.dataTable.get_columns():
@@ -67,13 +79,6 @@ class MenuBar(QMenuBar):
             self.columnsMenu.addAction(action)
             action.triggered.connect(func)
         return
-
-    def assign(self,session,staticTable,dataTable,win):
-        self.session = session
-        self.staticTable = staticTable
-        self.dataTable = dataTable
-        self.window = win
-        self.add_menus()
 
     def toggle_column(self,field,checked):
         columns = self.dataTable.get_columns()
@@ -92,7 +97,7 @@ class MenuBar(QMenuBar):
         exit_action = QAction("Exit",parent=self.window)
         self.file_menu.addAction(exit_action)
         exit_action.triggered.connect(self.window.exit_window)
-        self.add_filters_menu()
+
 
     def add_filters_menu(self):
         self.view_menu = QMenu("View",parent=self)
@@ -104,6 +109,20 @@ class MenuBar(QMenuBar):
         filterActive.setCheckable(True)
         func = lambda x: self.filter_active_torrents(x)
         filterActive.triggered.connect(func)
+
+    def add_sort_menu(self):
+        self.sort_menu = QMenu("Sorting",parent=self)
+        self.view_menu.addMenu(self.sort_menu)
+        fields = ["uploaded","ratio","time_active","size"]
+        for field in fields:
+            action = QAction(field,parent=self.window)
+            action.setCheckable(False)
+            func = lambda x,field=field: self.sort_tree(x,field)
+            self.sort_menu.addAction(action)
+            action.triggered.connect(func)
+
+    def sort_tree(self,x,field):
+        self.window.tree.sort_top_items(field)
 
 
     def filter_active_torrents(self,x=True):
@@ -206,8 +225,6 @@ class ItemModel(QStandardItemModel):
             self.row_count -= 1
         return True
 
-
-
 class TreeWidget(QTreeWidget):
     def __init__(self,parent=None):
         super().__init__(parent=parent)
@@ -219,22 +236,27 @@ class TreeWidget(QTreeWidget):
         self.setHeaderHidden(True)
         self.setColumnCount(1)
 
-    def add_items(self):
+    def add_top_items(self):
         for client in self.session.get_client_names():
-            top_item = TreeItem.createTop(0,client)
+            top_item = TopTreeItem(0,client,self.session)
             self.addTopLevelItem(top_item)
+            client_rows = self.session.get_torrent_names(client)
+            top_item.create_children(client_rows)
+        return
 
-            for vals in self.session.get_torrent_names(client):
-                tree_item = TreeItem.create(0,*vals)
-                top_item.addChild(tree_item)
-        self.itemSelectionChanged.connect(self.display_info)
+    def sort_top_items(self,field):
+        for num in range(self.topLevelItemCount()):
+            item = self.topLevelItem(num)
+            item.sort_children(field)
+        return
 
     def assign(self,session=None,static=None,table=None,window=None):
         self.session = session
         self.table = table
         self.static = static
         self.window = window
-        self.add_items()
+        self.add_top_items()
+        self.itemSelectionChanged.connect(self.display_info)
         return
 
     def display_info(self):
@@ -275,29 +297,37 @@ class StandardItem(QStandardItem):
         self.field = arg
 
 
-class TreeItem(QTreeWidgetItem):
-    def __init__(self,typ):
-        super().__init__(typ)
-        self.typ = typ
+class ChildTreeItem(QTreeWidgetItem):
+    def __init__(self,item_type,row,session):
+        super().__init__(item_type)
+        self.session = session
+        self.label = row["name"]
+        self.t_hash = row["hash"]
+        self.client = row["client"]
         self.top = False
+        self.setText(0,self.label)
 
-    @classmethod
-    def create(cls,typ,name,t_hash,client):
-        item = cls(typ)
-        item.label = name
-        item.t_hash = t_hash
-        item.client = client
-        item.setText(0,name)
-        return item
+class TopTreeItem(QTreeWidgetItem):
+    def __init__(self,typ,client,session):
+        super().__init__(typ)
+        self.top = True
+        self.session = session
+        self.client = client
+        self.setText(0,self.client)
 
-    @classmethod
-    def createTop(cls,typ,client):
-        item = cls(typ)
-        item.client = client
-        item.top = True
-        item.setText(0,client)
-        return item
+    def create_children(self,rows):
+        for i,row in enumerate(rows):
+            child = ChildTreeItem(0,row,self.session)
+            self.addChild(child)
+        return
 
+    def sort_children(self,field):
+        track = self.session.get_top_rows(self.client,field)
+        counts = list(range(self.childCount()))[::-1]
+        children = [self.takeChild(i) for i in counts]
+        sort_children = sorted(children,key=lambda x: track[x.t_hash])
+        [self.addChild(i) for i in sort_children]
+        return
 
 class _CustomFont(QFont):
     def __init__(self):

@@ -85,9 +85,8 @@ class SqlSession(QueryMixin,BaseSession):
         field = "client"
         rows = self.select_where(table,field,client)
         rows = sorted(rows,key=lambda x: x["name"])
-        for row in rows:
-            v = (row["name"],row["hash"],row["client"])
-            yield v
+        return rows
+
 
     def get_data_rows(self,torrent_hash,client):
         args = ("data","hash",torrent_hash)
@@ -106,6 +105,14 @@ class SqlSession(QueryMixin,BaseSession):
         data = self.select_where("data","client",client)
         ul_chart,ratio_chart = self.factory.compiledata(data)
         return ul_chart,ratio_chart
+
+    def get_top_rows(self,client,field):
+        rows = self.select_where("data","client",client)
+        track = {}
+        for row in rows:
+            if row["hash"] not in track or row[field] >= track[row["hash"]]:
+                track[row["hash"]] = row[field]
+        return track
 
     def get_active_hashes(self):
         """ Query Database for latest timestamp and return related hashes """
