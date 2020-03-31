@@ -6,30 +6,31 @@ class TableView(QTableView):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.window = parent
-        self.setShowGrid(True)
         self.checks = []
+        self.setShowGrid(True)
+
 
     def assign(self,session,window):
         self.window = window
         self.session = session
-        self.manager = ItemModel(parent=self)
-        self.manager.setSession(self.session)
-        self.setModel(self.manager)
+        self.menubar = window.menubar
+        self.itemModel = ItemModel(parent=self)
+        self.itemModel.setSession(self.session)
+        self.setModel(self.itemModel)
         return
 
     def get_columns(self):
-        col = self.manager.col_map
+        col = self.itemModel.col_map
         return col
 
     def get_rows(self):
-        row = self.manager.row_map
+        row = self.itemModel.row_map
         return row
 
     def check_menus(self):
         for field,idx in self.checks:
-            self.hideColumn(idx)
+            self.setRowHidden(idx,True)
         return
-
 
 class ItemModel(QStandardItemModel):
     def __init__(self,parent=None):

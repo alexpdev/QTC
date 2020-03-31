@@ -82,11 +82,3 @@ class TestFactory(TestCase):
             self.assertIsInstance(item,QStandardItem)
             self.assertEqual(item.field,k)
             self.assertEqual(item.value,v)
-
-
-
-
-
-
-
-

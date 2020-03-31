@@ -39,9 +39,9 @@ sys.path.append(os.getcwd())
 try:
     from tests.test_pydenv import pydenv
     pydenv()
-    from tests._testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests._testsettings import DETAILS,DB_NAME,DATA_DIR,DEBUG
 except:
-    from tests.testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests.testsettings import DETAILS,DB_NAME,DATA_DIR,DEBUG
 
 from qtc.storage import BaseStorage, SqlStorage
 
@@ -53,8 +53,6 @@ class TestStorage(TestCase):
         path = DATA_DIR / DB_NAME
         if os.path.isfile(path):
             os.remove(path)
-        storage = SqlStorage(path,DETAILS)
-        storage.log()
 
     @classmethod
     def tearDownClass(cls):
@@ -65,12 +63,13 @@ class TestStorage(TestCase):
     def setUp(self):
         self.path = DATA_DIR / DB_NAME
         self.clients = DETAILS
-        self.storage = SqlStorage(self.path,self.clients)
+        self.storage = SqlStorage(self.path,self.clients,debug=DEBUG)
+        self.storage.log()
 
 
     def test_storage_constructors(self):
-        base_storage = BaseStorage(self.path,self.clients)
-        sql_storage = SqlStorage(self.path,self.clients)
+        base_storage = BaseStorage(self.path,self.clients,debug=DEBUG)
+        sql_storage = SqlStorage(self.path,self.clients,debug=DEBUG)
         for storage in [base_storage,sql_storage]:
             self.assertTrue(storage)
             self.assertIn("hash",storage.static_fields)

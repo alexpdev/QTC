@@ -54,7 +54,7 @@
   },
   "num_complete": {
     "type": "INTEGER",
-    "label": "Total Complete",
+    "label": "Completed",
     "table": "data",
     "conv": 0
   },
@@ -66,19 +66,19 @@
   },
   "uploaded_session": {
     "type": "INTEGER",
-    "label": "Uploaded Session",
+    "label": "Session Upload",
     "table": "data",
     "conv": 1
   },
   "num_incomplete": {
     "type": "INTEGER",
-    "label": "Total Incomplete",
+    "label": "Incompleted",
     "table": "data",
     "conv": 0
   },
   "num_leechs": {
     "type": "INTEGER",
-    "label": "Total Leechs",
+    "label": "Leechs",
     "table": "data",
     "conv": 0
   },
@@ -90,7 +90,7 @@
   },
   "num_seeds": {
     "type": "INTEGER",
-    "label": "Total Seeds",
+    "label": "Seeds",
     "table": "data",
     "conv": 0
   },

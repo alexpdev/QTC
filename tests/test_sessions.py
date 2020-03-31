@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/python
 #! -*- coding: utf-8 -*-
 
 ################################################################################
@@ -37,9 +37,9 @@ sys.path.append(os.getcwd())
 try:
     from tests.test_pydenv import pydenv
     pydenv()
-    from tests._testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests._testsettings import DETAILS,DB_NAME,DATA_DIR,DEBUG
 except:
-    from tests.testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests.testsettings import DETAILS,DB_NAME,DATA_DIR,DEBUG
 
 from qtc.session import BaseSession,SqlSession
 from qtc.storage import SqlStorage
@@ -73,7 +73,7 @@ class TestSession(TestCase):
 
     def test_session_methods(self):
         session = SqlSession(self.path,self.clients)
-        storage = SqlStorage(self.path,self.clients)
+        storage = SqlStorage(self.path,self.clients,debug=DEBUG)
         storage.log()
         names = [i for i in self.clients]
         client_names = session.get_client_names()
@@ -81,7 +81,7 @@ class TestSession(TestCase):
 
     def test_get_torrent_names(self):
         session = SqlSession(self.path,self.clients)
-        storage = SqlStorage(self.path,self.clients)
+        storage = SqlStorage(self.path,self.clients,debug=DEBUG)
         storage.log()
         for client in session.clients:
             names = session.get_torrent_names(client)

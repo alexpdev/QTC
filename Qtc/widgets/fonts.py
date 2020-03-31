@@ -11,13 +11,18 @@ class _CustomFont(QFont):
         self.setBold(self.info["bold"])
 
 
-class FancyFont(_CustomFont):
-    info = {"name":"Leelawadee","size":9,"bold":False}
+class Cambria(_CustomFont):
+    info = {"name":"Cambria","size":11,"bold":False}
+    def __init__(self):
+        super().__init__()
+
+class Niagara(_CustomFont):
+    info = {"name":"Niagara","size":9,"bold":False}
     def __init__(self):
         super().__init__()
 
 
-class SansFont(_CustomFont):
-    info = {"name":"Dubai Medium","size":8, "bold":False}
+class Dubai(_CustomFont):
+    info = {"name":"Dubai","size":8, "bold":False}
     def __init__(self):
         super().__init__()

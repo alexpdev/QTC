@@ -32,8 +32,8 @@
 ################################################################################
 
 import sys
-from PyQt5.QtCore import QRect, QSize, Qt, QMetaObject
-from PyQt5.QtGui import QFont, QPainter
+from PyQt5.QtCore import QSize, Qt, QMetaObject
+from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMenu,
                              QMenuBar, QStatusBar, QMainWindow,
                              QVBoxLayout, QWidget, QSplitter,
@@ -41,8 +41,10 @@ from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMenu,
 
 from PyQt5.QtChart import QChart, QChartView, QScatterSeries
 
-from qtc.widgets import (FancyFont, TreeWidget, SansFont,
-                         TableView, ItemModel, MenuBar)
+from qtc.widgets.treeview import ChildTreeItem, TopTreeItem, TreeWidget
+from qtc.widgets.tables import ItemModel, StandardItem, TableView
+from qtc.widgets.menubar import MenuBar
+from qtc.widgets.fonts import Cambria, Niagara, Dubai
 
 class Win(QMainWindow):
 
@@ -53,11 +55,8 @@ class Win(QMainWindow):
     def setup_ui(self):
         self.setWindowTitle("Torrent Companion")
         self.resize(1400, 800)
-        # self.setStyleSheet("background : #444; color: #fff;")
-
         self.hSplitter = QSplitter()
         self.tree = TreeWidget(parent=self.hSplitter)
-        self.tree.setObjectName("Names")
         self.hSplitter.addWidget(self.tree)
         self.tables = QWidget(self.hSplitter)
         self.hLayout = QHBoxLayout(self.tables)
@@ -72,7 +71,6 @@ class Win(QMainWindow):
         self.dataTable = TableView(self.tabs)
         self.tabs.addTab(self.dataTable,"data")
         self.hSplitter.setStretchFactor(1,4)
-        self.hSplitter.setContentsMargins(10,10,0,10)
         self.vSplitter.addWidget(self.tabs)
         self.vSplitter.setStretchFactor(1,3)
         self.add_chart_tabs()
@@ -101,24 +99,16 @@ class Win(QMainWindow):
         self.lineChart.setChart(line_chart)
         return
 
+    def open_settings(self):
+        pass
+
     def exit_window(self):
         self.destroy()
         self.session.end_session()
 
-    def add_file_menu(self):
-        self.file_menu = QMenu("File",parent=self.menubar)
-        self.view_menu = QMenu("View",parent=self.menubar)
-        self.menubar.addMenu(self.file_menu)
-        self.menubar.addMenu(self.view_menu)
-        self.filter_menu = QMenu("Filters",parent=self.menubar)
-        self.view_menu.addMenu(self.filter_menu)
-        exit_action = QAction("Exit",parent=self)
-        self.file_menu.addAction(exit_action)
-        exit_action.triggered.connect(self.exit_window)
-
     def assign_session(self,session):
         self.session = session
-        self.staticTable.assign(self.session,self)
-        self.dataTable.assign(self.session,self)
-        self.tree.assign(self.session,self.staticTable,self.dataTable,self)
-        self.menubar.assign(self.session,self.staticTable,self.dataTable,self)
+        self.staticTable.assign(session,self)
+        self.dataTable.assign(session,self)
+        self.tree.assign(session,self)
+        self.menubar.assign(session,self)

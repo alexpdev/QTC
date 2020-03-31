@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/python
 #! -*- coding: utf-8 -*-
 
 ################################################################################
@@ -37,9 +37,9 @@ sys.path.append(os.getcwd())
 try:
     from tests.test_pydenv import pydenv
     pydenv()
-    from tests._testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests._testsettings import DETAILS,DB_NAME,DATA_DIR,DEBUG
 except:
-    from tests.testsettings import DETAILS,DB_NAME,DATA_DIR
+    from tests.testsettings import DETAILS,DB_NAME,DATA_DIR,DEBUG
 
 from qtc.session import SqlSession
 
@@ -50,7 +50,7 @@ class TestOthers(TestCase):
     def setUpClass(cls):
         class_clients = DETAILS
         class_db = DATA_DIR / DB_NAME
-        sql_storage = SqlStorage(class_db,class_clients)
+        sql_storage = SqlStorage(class_db,clients=class_clients,debug=DEBUG)
         sql_storage.log()
 
     def setUp(self):
@@ -65,7 +65,7 @@ class TestOthers(TestCase):
 
 
     def test_db_data_changes(self):
-        storage = SqlStorage(self.path,self.clients)
+        storage = SqlStorage(self.path,self.clients,debug=DEBUG)
         storage.log()
         hashes = set()
         for client in self.clients:

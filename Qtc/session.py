@@ -87,7 +87,6 @@ class SqlSession(QueryMixin,BaseSession):
         rows = sorted(rows,key=lambda x: x["name"])
         return rows
 
-
     def get_data_rows(self,torrent_hash,client):
         args = ("data","hash",torrent_hash)
         rows = self.select_where(*args)
@@ -128,16 +127,8 @@ class SqlSession(QueryMixin,BaseSession):
         rows = self.select_where("data","timestamp",timestamp)
         return [i["hash"] for i in rows]
 
-    def check_log(self):
-        span = datetime.now() - self.logger[1]
-        if span.seconds > 600:
-            self.logger = (self.logger[0],datetime.now())
-            return self.logger[0].start()
-        return
-
-    def mainloop(self,log_thread,BASE_DIR):
+    def mainloop(self,BASE_DIR):
         self.Base_Dir = BASE_DIR
-        self.logger = (log_thread, datetime.now())
         self.app = QApplication(sys.argv)
         self.win = Win()
         self.win.assign_session(self)

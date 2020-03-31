@@ -1,19 +1,19 @@
-from PyQt5.QtWidgets import QMenubar, QMenu, QAction
+from PyQt5.QtWidgets import QMenuBar, QMenu, QAction
 
 
 class MenuBar(QMenuBar):
     def __init__(self,parent=None):
         super().__init__(parent=parent)
-        self.window = parent
         self.setObjectName(u"menubar")
-        self.active_hashes = []
-        self.tree_items = []
+        self.window = parent
 
-    def assign(self,session,staticTable,dataTable,win):
+    def assign(self,session,window):
         self.session = session
-        self.staticTable = staticTable
-        self.dataTable = dataTable
-        self.window = win
+        self.window = window
+        self.staticTable = window.staticTable
+        self.dataTable = window.dataTable
+        self.tree = window.tree
+        self.active_hashes = self.session.get_active_hashes()
         self.add_menus()
 
     def add_menus(self):
@@ -22,35 +22,27 @@ class MenuBar(QMenuBar):
         self.add_columns_menu()
         self.add_sort_menu()
 
+    def add_file_menu(self):
+        self.file_menu = QMenu("File",parent=self)
+        self.addMenu(self.file_menu)
+        exit_action = QAction("Exit",parent=self.window)
+        settings = QAction("Settings",parent=self.window)
+        self.file_menu.addAction(exit_action)
+        self.file_menu.addAction(settings)
+        exit_action.triggered.connect(self.window.exit_window)
+        settings.triggered.connect(self.open_settings)
+        return
+
     def add_columns_menu(self):
         self.columnsMenu = QMenu("Columns",parent=self)
         self.addMenu(self.columnsMenu)
         for field in self.dataTable.get_columns():
             action = QAction(field,parent=self.window)
             action.setCheckable(True)
-            func = lambda checked,x=field: self.toggle_column(x,checked)
             self.columnsMenu.addAction(action)
+            func = lambda checked,x=field: self.toggle_column(x,checked)
             action.triggered.connect(func)
         return
-
-    def toggle_column(self,field,checked):
-        columns = self.dataTable.get_columns()
-        idx = columns.index(field)
-        if checked:
-            self.dataTable.checks.append((field,idx))
-            self.dataTable.hideColumn(idx)
-        else:
-            self.dataTable.checks.remove((field,idx))
-            self.dataTable.showColumn(idx)
-        return
-
-    def add_file_menu(self):
-        self.file_menu = QMenu("File",parent=self)
-        self.addMenu(self.file_menu)
-        exit_action = QAction("Exit",parent=self.window)
-        self.file_menu.addAction(exit_action)
-        exit_action.triggered.connect(self.window.exit_window)
-
 
     def add_filters_menu(self):
         self.view_menu = QMenu("View",parent=self)
@@ -58,10 +50,11 @@ class MenuBar(QMenuBar):
         self.filter_menu = QMenu("Filters",parent=self)
         self.view_menu.addMenu(self.filter_menu)
         filterActive = QAction("Active Only",parent=self.window)
-        self.filter_menu.addAction(filterActive)
         filterActive.setCheckable(True)
         func = lambda x: self.filter_active_torrents(x)
         filterActive.triggered.connect(func)
+        self.filter_menu.addAction(filterActive)
+        return
 
     def add_sort_menu(self):
         self.sort_menu = QMenu("Sorting",parent=self)
@@ -73,25 +66,27 @@ class MenuBar(QMenuBar):
             func = lambda x,field=field: self.sort_tree(x,field)
             self.sort_menu.addAction(action)
             action.triggered.connect(func)
+        return
 
     def sort_tree(self,x,field):
-        self.window.tree.sort_top_items(field)
+        self.tree.sort_top_items(field)
+        return
 
 
     def filter_active_torrents(self,x=True):
-        if not x:
-            if not self.active_hashes: return
-            for item in self.tree_items:
-                item.setHidden(False)
-        elif not self.tree_items:
-            self.active_hashes = self.session.get_active_hashes()
-            for i in range(self.window.tree.topLevelItemCount()):
-                item = self.window.tree.topLevelItem(i)
-                for j in range(item.childCount()):
-                    childItem = item.child(j)
-                    if childItem.t_hash not in self.active_hashes:
-                        childItem.setHidden(True)
-                        self.tree_items.append(childItem)
+        self.tree.filter_active(self.active_hashes,x)
+        return
+
+    def open_settings(self):
+        self.window.open_settings()
+
+    def toggle_column(self,field,checked):
+        columns = self.dataTable.get_columns()
+        idx = columns.index(field)
+        if checked:
+            self.dataTable.checks.append((field,idx))
+            self.dataTable.hideColumn(idx)
         else:
-            for item in self.tree_items:
-                item.setHidden(True)
+            self.dataTable.checks.remove((field,idx))
+            self.dataTable.showColumn(idx)
+        return

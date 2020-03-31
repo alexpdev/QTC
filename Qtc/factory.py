@@ -38,7 +38,7 @@ from PyQt5.QtGui import QStandardItem
 from PyQt5.QtChart import (QBarSeries, QBarSet, QChart, QValueAxis,
                             QBarCategoryAxis, QValueAxis, QLineSeries)
 from PyQt5.QtCore import Qt
-from qtc.widgets import StandardItem
+from qtc.widgets.tables import StandardItem
 
 class ItemFactory:
 
