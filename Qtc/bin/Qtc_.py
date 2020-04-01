@@ -78,8 +78,9 @@ def main():
     database_path = BASE_DIR / "Qtc" /  DATA_DIR / DB_NAME
     storage = SqlStorage(path=database_path,clients=DETAILS,debug=DEBUG)
     thread = Thread(target=log,args=(1800,storage))
-    session = SqlSession(database_path,DETAILS)
+    thread.daemon = True
     thread.start()
+    session = SqlSession(database_path,DETAILS)
     session.mainloop(BASE_DIR)
     return 0
 

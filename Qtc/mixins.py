@@ -104,12 +104,6 @@ class RequestMixin:
 
 class QueryMixin:
 
-
-    def torrent_exists(self,table,field,value):
-        rows = self.select_where(table,field,value)
-        if rows: return rows[0]
-        return False
-
     def log_timestamp(self,stamp):
         with self.connection as cur:
             statement = f"INSERT INTO stamps VALUES (?)"
@@ -143,6 +137,14 @@ class QueryMixin:
             rows = r.fetchall()
         return rows
 
+    def select_where_and(self,table,**kwargs):
+        with self.connection as cur:
+            s = " AND ".join([k + " = ?"  for k in kwargs.keys()]) + ")"
+            query = f"SELECT * FROM {table} WHERE (" + s
+            r = cur.execute(query,tuple(kwargs.values()))
+            rows = r.fetchall()
+        return rows
+
     def select_fields(self,table,fields,condition,value):
         with self.connection as cur:
             query = f"SELECT {fields} FROM {table} WHERE {condition} == ?"
@@ -163,10 +165,11 @@ class QueryMixin:
         return
 
 
-    def delete_row(self,table_name,field,value):
+    def delete_row(self,table_name,**kwargs):
         with self.connection as cur:
-            statement = f"DELETE FROM {table_name} WHERE {field} = ?"
-            cur.execute(statement,(value,))
+            s = " AND ".join([k + " = ?"  for k in kwargs.keys()]) + ")"
+            statement = f"DELETE FROM {table_name} WHERE (" + s
+            cur.execute(statement,tuple(kwargs.values()))
         return
 
 

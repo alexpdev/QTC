@@ -97,48 +97,39 @@ class SqlStorage(BaseStorage, QueryMixin):
         if not self.check_path():
             self.dbg("Database not found.")
             self.installation_script()
-        last_hashes = self.check_timelog()
-        data = self.get_client_data(last_hashes)
+        self.timestamp = datetime.isoformat(datetime.now())
+        self.log_timestamp(self.timestamp)
+        data = self.get_data()
         self.format_data(data)
 
-    def get_client_data(self,last_hashes):
-        data = []
+    def get_data(self,data=[]):
         for client in self.clients:
             response = self.make_client_requests(client)
             self.dbg(f"{client} request successfull")
             for item in response:
-                if self.is_equal(last_hashes,item):
-                    continue
-                item["timestamp"] = self.timestamp.isoformat()
+                kwargs = { "client" : client, "hash" : item["hash"] }
+                if self.compare(item,kwargs): continue
+                item["timestamp"] = self.timestamp
                 item["client"] = client
                 data.append(item)
         return data
 
-    def is_equal(self,last_hashes,item):
-        if not last_hashes or item["hash"] not in last_hashes[0]:
-            return False
-        hashes, last  = last_hashes
-        fields = ["ratio","uploaded","downloaded","completed"]
-        last_hash = last[hashes.index(item["hash"])]
-        for field in fields:
-            if last_hash[field] != item[field]:
-                self.dbg(f"{field} changed since last for {item['name']}")
+    def compare(self,item,kwargs):
+        results = self.query_data(**kwargs)
+        if not results: return False
+        for field in ["ratio", "uploaded", "downloaded", "completed", "size"]:
+            if item[field] != results[field]:
                 return False
         return True
 
-    def check_timelog(self):
-        rows = tuple(self.select_rows("stamps"))
-        self.dbg(f"{len(rows)} rows in timestamp table")
-        self.timestamp = datetime.now()
-        self.log_timestamp(datetime.isoformat(self.timestamp))
-        self.dbg(f"timestamp {self.timestamp} logged")
-        if not rows: return False
-        stamp = rows[-1]["timestamp"]
-        last = tuple(self.select_where("data","timestamp",stamp))
-        last_hashes = ([i["hash"] for i in last], last)
-        self.dbg(f"now={self.timestamp.isoformat()} last={stamp}")
-        self.dbg(f"{len(last)} rows in data table with timestamp {stamp}")
-        return last_hashes
+
+    def query_data(self,**kwargs):
+        query = tuple(self.select_where_and("data",**kwargs))
+        timestamps = [i["timestamp"] for i in query]
+        if not timestamps: return False
+        idx = timestamps.index(max(timestamps))
+        self.dbg(f"index of max timestamp is {idx}")
+        return query[idx]
 
     def check_path(self):
         if os.path.isfile(self.path):
@@ -156,13 +147,20 @@ class SqlStorage(BaseStorage, QueryMixin):
 
     def filter_new(self, data):
         for torrent in data:
-            row = self.torrent_exists("static", "hash", torrent["hash"])
-            if row and len([i for i in row.keys() if torrent[i] != row[i]]) < 3:
+            if self.torrent_exists(torrent):
                 yield self.filter_data_fields(torrent)
-                continue
-            elif row:
-                self.delete_row("static","hash",row["hash"])
-            self.create_new_torrent(torrent)
+            else:
+                self.create_new_torrent(torrent)
+
+
+    def torrent_exists(self,torrent):
+        kwargs = {"client" : torrent["client"] , "hash" : torrent["hash"]}
+        rows = tuple(self.select_where_and("static",**kwargs))
+        if not rows: return False
+        if len([i for i in rows[0].keys() if torrent[i] != rows[0][i]]) < 2:
+            self.delete_row("static",**kwargs)
+            return False
+        return True
 
     def get_save_values(self, torrent):
         column, values, params = [], [], []
