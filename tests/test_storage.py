@@ -53,6 +53,8 @@ class TestStorage(TestCase):
         path = DATA_DIR / DB_NAME
         if os.path.isfile(path):
             os.remove(path)
+        storage = SqlStorage(path,DETAILS,debug=DEBUG)
+        storage.log()
 
     @classmethod
     def tearDownClass(cls):
@@ -63,8 +65,6 @@ class TestStorage(TestCase):
     def setUp(self):
         self.path = DATA_DIR / DB_NAME
         self.clients = DETAILS
-        self.storage = SqlStorage(self.path,self.clients,debug=DEBUG)
-        self.storage.log()
 
 
     def test_storage_constructors(self):
@@ -78,35 +78,38 @@ class TestStorage(TestCase):
             self.assertEqual(storage.clients,self.clients)
 
     def test_request_mixin(self):
+        storage = SqlStorage(path=self.path,clients=self.clients,debug=DEBUG)
         for client in self.clients:
-            data = self.storage.make_client_requests(client)
+            data = storage.make_client_requests(client)
             self.assertTrue(data)
             self.assertIsInstance(data,list)
             torrent = data[0]
             torrent["client"] = client
             torrent["timestamp"] = "timestamp"
             self.assertIsInstance(torrent,dict)
-            for i in self.storage.static_fields:
+            for i in storage.static_fields:
                 self.assertIn(i,torrent)
-            for i in self.storage.data_fields:
+            for i in storage.data_fields:
                 self.assertIn(i,torrent)
 
     def test_log_function(self):
-        self.assertFalse(self.storage.log())
+        storage = SqlStorage(path=self.path,clients=self.clients,debug=DEBUG)
+        storage.log()
         self.assertTrue(os.path.isfile(self.path))
-        self.assertFalse(self.storage.log())
-        for row in self.storage.select_rows("static"):
+        storage.log()
+        for row in storage.select_rows("static"):
             self.assertTrue(len(row) > 5)
 
     def test_create_database_table(self):
+        storage = SqlStorage(path=self.path,clients=self.clients,debug=DEBUG)
         db_name = "names"
         db_headers = ("name TEXT, address TEXT, number INTEGER, age REAL")
-        self.storage.create_db_table(db_headers,db_name)
+        storage.create_db_table(db_headers,db_name)
         con = sqlite3.connect(self.path)
         c = con.execute("SELECT * from names")
         self.assertEqual(c.fetchone(),None)
         data = {"name":"dursley","address":"Privet Drive","number":4,"age":44.5}
-        self.storage.save_to_db(data,db_name)
+        storage.save_to_db(data,db_name)
         con = sqlite3.connect(self.path)
         c = con.execute("SELECT * from names")
         for row in c:

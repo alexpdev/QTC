@@ -101,24 +101,32 @@ class SqlStorage(BaseStorage, QueryMixin):
         self.log_timestamp(self.timestamp)
         data = self.get_data()
         self.format_data(data)
+        return
 
     def get_data(self,data=[]):
         for client in self.clients:
+            last_rows = self.query_last_rows(client)
             response = self.make_client_requests(client)
             self.dbg(f"{client} request successfull")
             for item in response:
-                kwargs = { "client" : client, "hash" : item["hash"] }
-                if self.compare(item,kwargs): continue
+                if self.compare(item,last_rows): continue
                 item["timestamp"] = self.timestamp
                 item["client"] = client
                 data.append(item)
         return data
 
-    def compare(self,item,kwargs):
-        results = self.query_data(**kwargs)
-        if not results: return False
+    def query_last_rows(self,client,d={}):
+        db_info = self.select_where("data","client",client)
+        for row in db_info:
+            h,t = row["hash"],row["timestamp"]
+            if h not in d or d[h]["timestamp"] < t:
+                d[h] = row
+        return d
+
+    def compare(self,item,last_rows):
+        if item["hash"] not in last_rows: return False
         for field in ["ratio", "uploaded", "downloaded", "completed", "size"]:
-            if item[field] != results[field]:
+            if item[field] != last_rows[item["hash"]][field]:
                 return False
         return True
 
@@ -128,7 +136,6 @@ class SqlStorage(BaseStorage, QueryMixin):
         timestamps = [i["timestamp"] for i in query]
         if not timestamps: return False
         idx = timestamps.index(max(timestamps))
-        self.dbg(f"index of max timestamp is {idx}")
         return query[idx]
 
     def check_path(self):
@@ -157,7 +164,7 @@ class SqlStorage(BaseStorage, QueryMixin):
         kwargs = {"client" : torrent["client"] , "hash" : torrent["hash"]}
         rows = tuple(self.select_where_and("static",**kwargs))
         if not rows: return False
-        if len([i for i in rows[0].keys() if torrent[i] != rows[0][i]]) < 2:
+        if len([i for i in rows[0].keys() if torrent[i] != rows[0][i]]) >= 2:
             self.delete_row("static",**kwargs)
             return False
         return True

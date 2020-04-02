@@ -78,6 +78,7 @@ class TestOthers(TestCase):
                 torrent["client"] = client
                 self.assertEqual(torrent["category"], "software")
                 torrent["state"] = "uploadingAllDayLong"
+                self.assertEqual(torrent["state"],"uploadingAllDayLong")
             with self.subTest("filter_new"):
                 self.assertFalse(list(storage.filter_new(data)))
         for row in storage.select_rows("static"):

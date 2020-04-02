@@ -32,6 +32,7 @@
 
 import os
 import sys
+from datetime import datetime
 from unittest import TestCase
 sys.path.append(os.getcwd())
 try:
@@ -40,13 +41,12 @@ try:
     from tests._testsettings import DETAILS,DB_NAME,DATA_DIR,DEBUG
 except:
     from tests.testsettings import DETAILS,DB_NAME,DATA_DIR,DEBUG
+    from tests.test_data import data
 
-from qtc.session import BaseSession,SqlSession
-from qtc.storage import SqlStorage
+from qtc.mixins import QueryMixin, SqlConnect
+from tests.test_data import a
 
-
-class TestSession(TestCase):
-
+class TestMixin(TestCase):
     @classmethod
     def setUpClass(cls):
         db = DATA_DIR / DB_NAME
@@ -63,51 +63,48 @@ class TestSession(TestCase):
         if os.path.isfile(db):
             os.remove(db)
 
-    def test_session_init(self):
-        base = BaseSession(self.path,self.clients)
-        sql = SqlSession(self.path,self.clients)
-        self.assertTrue(base)
-        self.assertTrue(sql)
-        self.assertEqual(base.path,self.path)
-        self.assertEqual(sql.path,self.path)
+    def test_sqlconnect(self):
+        connection = SqlConnect(self.path)
+        with connection as cursor:
+            self.assertTrue(cursor)
+        return True
 
-    def test_session_methods(self):
-        session = SqlSession(self.path,self.clients)
-        storage = SqlStorage(self.path,self.clients,debug=DEBUG)
-        storage.log()
-        names = [i for i in self.clients]
-        client_names = session.get_client_names()
-        self.assertEqual(names,client_names)
+    def test_create_table(self):
+        mixin = QueryMixin()
+        mixin.path = self.path
+        mixin.clients = self.clients
+        connection = SqlConnect(self.path)
+        mixin.connection = connection
+        self.assertTrue(mixin)
+        self.assertEqual(mixin.path,self.path)
+        mixin.create_db_table("timestamp","stamps")
+        stamp = datetime.timestamp(datetime.now())
+        mixin.log_timestamp(stamp)
+        with connection as curs:
+            r = tuple(curs.execute("SELECT * FROM stamps"))
+            self.assertTrue(r)
+            self.assertIsInstance(r[0]["timestamp"],float)
+            self.assertEqual(r[0]["timestamp"],stamp)
 
-    def test_get_torrent_names(self):
-        session = SqlSession(self.path,self.clients)
-        storage = SqlStorage(self.path,self.clients,debug=DEBUG)
-        storage.log()
-        for client in session.clients:
-            names = session.get_torrent_names(client)
-            self.assertTrue(names)
+    def test_save_to_db(self):
+        mixin = QueryMixin()
+        mixin.path = self.path
+        mixin.clients = self.clients
+        mixin.connection = SqlConnect(self.path)
+        columns = tuple(a[0].keys())
+        params = tuple(["?" for i in range(len(columns))])
+        mixin.create_db_table(",".join(columns),"torrents")
+        all_vals = []
+        for i in a:
+            values = []
+            for k, v in i.items():
+                values.append(v)
+            all_vals.append(tuple(values))
+        cols,vals,params = ", ".join(columns), values, ", ".join(params)
+        mixin.save_many_to_db(cols,all_vals,params,"torrents")
+        rows = mixin.select_rows("torrents")
+        self.assertEqual(len(rows),len(a))
 
-    def test_get_active_hashes(self):
-        session = SqlSession(self.path,self.clients)
-        storage = SqlStorage(self.path,self.clients)
-        storage.log()
-        lst = session.get_active_hashes()
-        self.assertTrue(lst)
-        for i in lst:
-            self.assertIsInstance(i,str)
-
-    def test_get_top_rows(self):
-        session = SqlSession(self.path,self.clients)
-        storage = SqlStorage(self.path,self.clients)
-        storage.log()
-        for client in self.clients:
-            lst = session.get_top_rows(client,"timestamp")
-            for row in lst:
-                print(row)
-                kwargs = {"client":client,"hash":row}
-                rows = session.select_where_and("data",**kwargs)
-                stamp = max([i["timestamp"] for i in rows])
-                self.assertEqual(stamp,lst[row])
 
 
 
