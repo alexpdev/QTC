@@ -45,8 +45,6 @@ except:
 
 from qtc.factory import ItemFactory
 
-from PyQt5.QtGui import QStandardItem
-
 
 class TestFactory(TestCase):
 

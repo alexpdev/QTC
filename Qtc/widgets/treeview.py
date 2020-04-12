@@ -25,7 +25,7 @@ class TreeWidget(QTreeWidget):
 
     def add_top_items(self):
         for client in self.session.get_client_names():
-            top_item = TopTreeItem(0,client,self.session)
+            top_item = TopTreeItem(0,client,self.session,self.window)
             self.addTopLevelItem(top_item)
             client_rows = self.session.get_torrent_names(client)
             top_item.create_children(client_rows)
@@ -33,23 +33,12 @@ class TreeWidget(QTreeWidget):
 
     def display_info(self):
         selected = self.currentItem()
-        if selected.top: return
-        t_hash = selected.t_hash
-        client = selected.client
-        db_rows = self.session.get_data_rows(t_hash,client)
-        values = self.session.get_static_rows(t_hash,client)
-        self.static.itemModel.receive_static(values)
-        self.table.itemModel.receive_table(db_rows)
-        self.compile_charts(db_rows)
-
-    def compile_charts(self,db_rows):
-        factory = self.session.factory
-        ul,ratio,line = factory.compile_torrent_charts(db_rows)
-        self.window.torrent_charts(ul,ratio,line)
+        staticModel,dataModel = self.static.itemModel,self.table.itemModel
+        selected.display_info(staticModel,dataModel)
+        return
 
     def sort_top_items(self,field):
-        for num in range(self.topLevelItemCount()):
-            item = self.topLevelItem(num)
+        for item in self.get_top_items():
             item.sort_children(field)
         return
 
@@ -65,29 +54,46 @@ class TreeWidget(QTreeWidget):
         return
 
 class ChildTreeItem(QTreeWidgetItem):
-    def __init__(self,item_type,row,session):
+    def __init__(self,item_type,row,session,window):
         super().__init__(item_type)
         self.setFont(0,Dubai())
         self.session = session
+        self.window = window
         self.label = row["name"]
         self.t_hash = row["hash"]
         self.client = row["client"]
         self.top = False
         self.setText(0,self.label)
 
+    def display_info(self,staticModel,dataModel):
+        db_rows = self.session.get_data_rows(self.t_hash,self.client)
+        values = self.session.get_static_rows(self.t_hash,self.client)
+        staticModel.receive_static(values)
+        dataModel.receive_table(db_rows)
+        self.compile_charts(db_rows)
+
+    def compile_charts(self,db_rows):
+        factory = self.session.factory
+        ul,ratio,line = factory.compile_torrent_charts(db_rows)
+        self.window.torrent_charts(ul,ratio,line)
+
 
 class TopTreeItem(QTreeWidgetItem):
-    def __init__(self,typ,client,session):
+    def __init__(self,typ,client,session,window):
         super().__init__(typ)
         self.setFont(0,Cambria())
         self.top = True
         self.session = session
+        self.window = window
         self.client = client
         self.setText(0,self.client)
 
+    def display_info(self,staticModel,dataModel):
+        pass
+
     def create_children(self,rows):
         for i,row in enumerate(rows):
-            child = ChildTreeItem(0,row,self.session)
+            child = ChildTreeItem(0,row,self.session,self.window)
             self.addChild(child)
         return
 

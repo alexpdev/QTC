@@ -35,19 +35,20 @@ from datetime import datetime
 
 from qtc.mixins import QueryMixin, RequestMixin, SqlConnect
 
+class ConfigurationError(Exception):
+    pass
+
 class BaseStorage(RequestMixin):
 
     def __init__(self, path=None, clients=None, debug=False, *args, **kwargs):
         self.path = path
         self.clients = clients
         self.debug = debug
-
         self.static_fields = ("hash", "client", "name",
                               "tracker", "magnet_uri",
                               "save_path", "total_size",
                               "added_on", "completion_on",
                               "state", "category", "tags")
-
         self.data_fields = ("hash", "client", "timestamp",
                             "ratio", "uploaded", "time_active",
                             "completed", "size", "downloaded",
@@ -55,6 +56,7 @@ class BaseStorage(RequestMixin):
                             "seen_complete", "dlspeed", "upspeed",
                             "num_complete", "num_incomplete",
                             "downloaded_session", "uploaded_session")
+
 
     def make_client_requests(self, client):
         client_details = self.clients[client]
@@ -64,10 +66,6 @@ class BaseStorage(RequestMixin):
         cookies = resp.cookies
         data = self.get_info(resp, url=url)
         return data
-
-    def dbg(self,message):
-        if self.debug:
-            print(message)
 
     def filter_static_fields(self, torrent):
         info = torrent.copy()
@@ -83,6 +81,22 @@ class BaseStorage(RequestMixin):
                 del info[k]
         return info
 
+    def dbug_out(self,msg):
+        if self.debug:
+            with open(self.dbug_path,"at") as fd:
+                fd.write(msg + "\n")
+                print(msg)
+        return
+
+    def dbug_first(self,msg):
+        if not self.debug: return
+        self.dbug_path = self.path.parent / "debug.log"
+        with open(self.dbug_path,"at") as fd:
+            ts = datetime.isoformat(datetime.now())
+            ts_len, output = len(ts), "Debug Log - " + ts
+            fd.write(output + "\n")
+            fd.write("-"*(ts_len + 9) + "\n")
+        self.dbug_out(msg)
 
 class SqlStorage(BaseStorage, QueryMixin):
     def __init__(self, path=None, clients=None, debug=False, *args, **kwargs):
@@ -90,12 +104,13 @@ class SqlStorage(BaseStorage, QueryMixin):
         self.path = path
         self.clients = clients
         self.connection = SqlConnect(self.path)
-        self.dbg("Storage Initialized")
+        self.dbug_first("First Output: Storage Initialized")
 
     def log(self):
-        self.dbg("Storage process starting")
+        self.dbug_out("Data retreival and storage process initialized.")
         if not self.check_path():
-            self.dbg("Database not found.")
+            self.dbug_out("Error: No database discovered. Beginning \
+                                                Clean Install Script")
             self.installation_script()
         self.timestamp = datetime.isoformat(datetime.now())
         self.log_timestamp(self.timestamp)
@@ -104,12 +119,15 @@ class SqlStorage(BaseStorage, QueryMixin):
         return
 
     def get_data(self,data=[]):
+        if not self.clients:
+            self.dbug_out("Error: Client details ommited from config file. Waiting for user to provide address and login information.")
+            raise ConfigurationError
+
         for client in self.clients:
             last_rows = self.query_last_rows(client)
             response = self.make_client_requests(client)
-            self.dbg(f"{client} request successfull")
+            self.dbug_out(f"{client} request successfull")
             for item in response:
-                if self.compare(item,last_rows): continue
                 item["timestamp"] = self.timestamp
                 item["client"] = client
                 data.append(item)
@@ -143,8 +161,8 @@ class SqlStorage(BaseStorage, QueryMixin):
             return True
         return False
 
-    def format_data(self, data):
-        vals = []
+    def format_data(self, data,vals=[]):
+        self.dbug_out("Saving filtered data to Database.")
         for torrent in self.filter_new(data):
             columns, values, params = self.get_save_values(torrent)
             vals.append(tuple(values))
@@ -153,6 +171,7 @@ class SqlStorage(BaseStorage, QueryMixin):
         return self.save_many_to_db(columns, vals, params, "data")
 
     def filter_new(self, data):
+    # if self.compare(item,last_rows): continue
         for torrent in data:
             if self.torrent_exists(torrent):
                 yield self.filter_data_fields(torrent)

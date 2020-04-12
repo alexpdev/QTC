@@ -87,6 +87,9 @@ class SqlSession(QueryMixin,BaseSession):
         rows = sorted(rows,key=lambda x: x["name"])
         return rows
 
+    def get_client_torrents(self,client):
+        static = self.get_torrent_names(client)
+
     def get_data_rows(self,torrent_hash,client):
         args = ("data","hash",torrent_hash)
         rows = self.select_where(*args)

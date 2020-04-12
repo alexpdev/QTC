@@ -164,6 +164,7 @@ class ItemFactory:
             """ Compare current iteration to previous and skip if values
                 most of the measured values are identical to avoid clutter.
             """
+
             if ul == ul_last and skip_count < 6:
                 skip_count += 1
                 continue
@@ -174,8 +175,9 @@ class ItemFactory:
             ulset.append(ul)
             ratioset.append(ratio)
 
-            """ Change IsoFormatted time into a more compact datetime format
+            """ Change IsoFormatted time into a more compact datetime format.
             """
+
             stamp = self.convert_stamp(row["timestamp"])
             seq.append(stamp)
         ul_series.append(ulset)
@@ -235,6 +237,7 @@ class ItemFactory:
                 timediff = abs(stamp - last_stamp)
                 uldiff = abs(ul - last_ul)
                 ratiodiff = abs(ratio - last_ratio)
-                yield (timediff, uldiff, ratiodiff)
+                if uldiff or ratiodiff:
+                    yield (timediff, uldiff, ratiodiff)
             last_stamp, last_ul, last_ratio = stamp, ul, ratio
         return diffs

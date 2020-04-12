@@ -72,8 +72,8 @@ def log(interval,storage):
 def main():
     """ Execute main program.
 
-    Returns:
-        int -- returns 0 on program exit.
+        Returns:
+            int -- returns 0 on program exit.
     """
     database_path = BASE_DIR / "Qtc" /  DATA_DIR / DB_NAME
     storage = SqlStorage(path=database_path,clients=DETAILS,debug=DEBUG)

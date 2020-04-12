@@ -91,9 +91,12 @@ class TestMixin(TestCase):
         mixin.path = self.path
         mixin.clients = self.clients
         mixin.connection = SqlConnect(self.path)
+        self.assertTrue(mixin)
         columns = tuple(a[0].keys())
         params = tuple(["?" for i in range(len(columns))])
         mixin.create_db_table(",".join(columns),"torrents")
+        table_rows = mixin.select_rows("torrents")
+        self.assertEqual(table_rows,[])
         all_vals = []
         for i in a:
             values = []

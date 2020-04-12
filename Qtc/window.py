@@ -44,6 +44,7 @@ from PyQt5.QtChart import QChart, QChartView, QScatterSeries
 from qtc.widgets.treeview import ChildTreeItem, TopTreeItem, TreeWidget
 from qtc.widgets.tables import ItemModel, StandardItem, TableView
 from qtc.widgets.menubar import MenuBar
+from qtc.widgets.settings_menu import SettingsMenu
 from qtc.widgets.fonts import Cambria, Niagara, Dubai
 
 class Win(QMainWindow):
@@ -100,7 +101,8 @@ class Win(QMainWindow):
         return
 
     def open_settings(self):
-        pass
+        settings_menu = SettingsMenu(self,self.session,parent=self)
+        settings_menu.show()
 
     def exit_window(self):
         self.destroy()

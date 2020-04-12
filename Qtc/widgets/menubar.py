@@ -1,6 +1,5 @@
 from PyQt5.QtWidgets import QMenuBar, QMenu, QAction
 
-
 class MenuBar(QMenuBar):
     def __init__(self,parent=None):
         super().__init__(parent=parent)
