@@ -171,7 +171,7 @@ class SqlStorage(BaseStorage, QueryMixin):
         return self.save_many_to_db(columns, vals, params, "data")
 
     def filter_new(self, data):
-    # if self.compare(item,last_rows): continue
+        # if self.compare(item,last_rows): continue
         for torrent in data:
             if self.torrent_exists(torrent):
                 yield self.filter_data_fields(torrent)
