@@ -98,7 +98,9 @@ class BaseStorage(RequestMixin):
             fd.write("-"*(ts_len + 9) + "\n")
         self.dbug_out(msg)
 
+
 class SqlStorage(BaseStorage, QueryMixin):
+
     def __init__(self, path=None, clients=None, debug=False, *args, **kwargs):
         super().__init__(path=path, clients=clients, debug=debug)
         self.path = path

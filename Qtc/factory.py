@@ -113,14 +113,17 @@ class ItemFactory:
         return nval
 
     def convert_bps(self,data):
+        """ Convert bytes per second. """
         val = self.convert_bytes(data)
         val += "/s"
         return val
 
     def convert_const(self,data):
+        """ convert to string format """
         return str(data)
 
     def convert_time(self,data):
+        """ convert timestamp """
         return str(datetime.fromtimestamp(data))
 
     def convert_ratio(self,data):
